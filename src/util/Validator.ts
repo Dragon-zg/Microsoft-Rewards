@@ -20,7 +20,7 @@ const DelaySchema = z.object({
     max: NumberOrString
 })
 
-const QueryEngineSchema = z.enum(['google', 'wikipedia', 'reddit', 'local'])
+const QueryEngineSchema = z.enum(['google', 'wikipedia', 'reddit', 'local', 'gmya'])
 
 // Webhook
 const WebhookSchema = z.object({
@@ -71,6 +71,7 @@ export const ConfigSchema = z.object({
         clickRandomResults: z.boolean(),
         parallelSearching: z.boolean(),
         queryEngines: z.array(QueryEngineSchema),
+        gmyaAppKey: z.string().optional(),
         searchResultVisitTime: NumberOrString,
         searchDelay: DelaySchema,
         readDelay: DelaySchema
@@ -129,7 +130,8 @@ const defaultConfig: Config = {
         scrollRandomResults: true,
         clickRandomResults: true,
         parallelSearching: true,
-        queryEngines: ['google', 'wikipedia', 'reddit', 'local'],
+        queryEngines: ['google', 'wikipedia', 'reddit', 'local', 'gmya'],
+        gmyaAppKey: '',
         searchResultVisitTime: '10sec',
         searchDelay: { min: '30sec', max: '1min' },
         readDelay: { min: '30sec', max: '1min' }

@@ -23,7 +23,8 @@
         "scrollRandomResults": false,
         "clickRandomResults": false,
         "parallelSearching": true,
-        "queryEngines": ["local", "google", "wikipedia", "reddit"],
+        "queryEngines": ["gmya", "local", "google", "wikipedia", "reddit"],
+        "gmyaAppKey": "",
         "searchResultVisitTime": "10sec",
         "searchDelay": {
             "min": "30sec",

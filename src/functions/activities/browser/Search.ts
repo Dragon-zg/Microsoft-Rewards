@@ -49,7 +49,7 @@ export class Search extends Workers {
                 related: true,
                 langCode,
                 geoLocale: locale,
-                sourceOrder: ['google', 'wikipedia', 'reddit', 'local']
+                sourceOrder: this.bot.config.searchSettings.queryEngines
             })
 
             queries = [...new Set(queries.map(q => q.trim()).filter(Boolean))]

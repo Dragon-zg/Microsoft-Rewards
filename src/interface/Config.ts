@@ -15,13 +15,14 @@ export interface Config {
     webhook: ConfigWebhook
 }
 
-export type QueryEngine = 'google' | 'wikipedia' | 'reddit' | 'local'
+export type QueryEngine = 'google' | 'wikipedia' | 'reddit' | 'local' | 'gmya'
 
 export interface ConfigSearchSettings {
     scrollRandomResults: boolean
     clickRandomResults: boolean
     parallelSearching: boolean
     queryEngines: QueryEngine[]
+    gmyaAppKey?: string
     searchResultVisitTime: number | string
     searchDelay: ConfigDelay
     readDelay: ConfigDelay

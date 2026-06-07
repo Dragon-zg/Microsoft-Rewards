@@ -19,7 +19,7 @@ export class QueryCore {
     ): Promise<string[]> {
         const {
             shuffle = false,
-            sourceOrder = ['google', 'wikipedia', 'reddit', 'local'],
+            sourceOrder = ['google', 'wikipedia', 'reddit', 'local', 'gmya'],
             related = true,
             langCode = 'en',
             geoLocale = 'US'
@@ -35,7 +35,7 @@ export class QueryCore {
             const topicLists: string[][] = []
 
             const sourceHandlers: Record<
-                'google' | 'wikipedia' | 'reddit' | 'local',
+                'google' | 'wikipedia' | 'reddit' | 'local' | 'gmya',
                 (() => Promise<string[]>) | (() => string[])
             > = {
                 google: async () => {
@@ -56,6 +56,11 @@ export class QueryCore {
                 local: () => {
                     const topics = this.getLocalQueryList()
                     this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `local: ${topics.length}`)
+                    return topics
+                },
+                gmya: async () => {
+                    const topics = await this.getGmyaHotTopics().catch(() => [])
+                    this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `gmya: ${topics.length}`)
                     return topics
                 }
             }
@@ -441,6 +446,48 @@ export class QueryCore {
                 this.bot.isMobile,
                 'SEARCH-REDDIT',
                 `request failed | subreddit=${subreddit} | error=${
+                    error instanceof Error ? `${error.name}: ${error.message}\n${error.stack ?? ''}` : String(error)
+                }`
+            )
+            return []
+        }
+    }
+
+    async getGmyaHotTopics(): Promise<string[]> {
+        const sources = ['ZhiHuHot', 'WeiBoHot', 'TouTiaoHot', 'DouYinHot', 'BaiduHot'] as const
+        const source = sources[Math.floor(Math.random() * sources.length)] as (typeof sources)[number]
+        const appKey = this.bot.config.searchSettings.gmyaAppKey?.trim()
+        const qs = appKey ? `?format=json&appkey=${encodeURIComponent(appKey)}` : '?format=json'
+
+        try {
+            const request: AxiosRequestConfig = {
+                url: `https://api.gmya.net/Api/${source}${qs}`,
+                method: 'GET',
+                headers: {
+                    Accept: 'application/json'
+                }
+            }
+
+            const response = await this.bot.axios.request(request, this.bot.config.proxy.queryEngine)
+            const items = Array.isArray(response.data?.data) ? (response.data.data as Array<{ title?: unknown }>) : []
+            const out = items.map(item => (typeof item?.title === 'string' ? item.title : '')).filter(Boolean)
+
+            if (!out.length) {
+                this.bot.logger.debug(
+                    this.bot.isMobile,
+                    'SEARCH-GMYA-HOT',
+                    `empty result | source=${source} | hasAppKey=${Boolean(appKey)}`
+                )
+            } else {
+                this.bot.logger.debug(this.bot.isMobile, 'SEARCH-GMYA-HOT', `source=${source} | count=${out.length}`)
+            }
+
+            return out
+        } catch (error) {
+            this.bot.logger.debug(
+                this.bot.isMobile,
+                'SEARCH-GMYA-HOT',
+                `request failed | source=${source} | error=${
                     error instanceof Error ? `${error.name}: ${error.message}\n${error.stack ?? ''}` : String(error)
                 }`
             )
