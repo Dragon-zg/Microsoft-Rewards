@@ -5,7 +5,7 @@
         "totpSecret": "",
         "recoveryEmail": "",
         "geoLocale": "cn",
-        "langCode": "en",
+        "langCode": "zh",
         "proxy": {
             "proxyAxios": false,
             "url": "",
