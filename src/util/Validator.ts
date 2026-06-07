@@ -130,7 +130,7 @@ const defaultConfig: Config = {
         scrollRandomResults: true,
         clickRandomResults: true,
         parallelSearching: true,
-        queryEngines: ['google', 'wikipedia', 'reddit', 'local', 'gmya'],
+        queryEngines: ['gmya', 'local', 'google', 'wikipedia', 'reddit'],
         gmyaAppKey: '',
         searchResultVisitTime: '10sec',
         searchDelay: { min: '30sec', max: '1min' },
