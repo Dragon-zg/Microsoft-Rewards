@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { AxiosRequestConfig } from 'axios'
 import type { BrowserFingerprintWithHeaders } from 'fingerprint-generator'
 
 import type { ChromeVersion, EdgeVersion } from '../interface/UserAgentUtil'
@@ -6,9 +6,9 @@ import type { MicrosoftRewardsBot } from '../index'
 
 export class UserAgentManager {
     private static readonly NOT_A_BRAND_VERSION = '99'
-    private static readonly CHROME_VERSION_TIMEOUT_MS = 20000
-    private static readonly CHROME_VERSION_MAX_RETRIES = 10
-    private static readonly CHROME_VERSION_RETRY_DELAY_MS = 1000
+    private static readonly VERSION_REQUEST_TIMEOUT_MS = 20000
+    private static readonly VERSION_REQUEST_MAX_RETRIES = 10
+    private static readonly VERSION_REQUEST_RETRY_DELAY_MS = 1000
 
     constructor(private bot: MicrosoftRewardsBot) {}
 
@@ -45,73 +45,65 @@ export class UserAgentManager {
     }
 
     async getChromeVersion(isMobile: boolean): Promise<string> {
-        const request = {
-            url: 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.json',
-            method: 'GET',
-            timeout: UserAgentManager.CHROME_VERSION_TIMEOUT_MS,
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }
-
-        try {
-            for (let attempt = 1; attempt <= UserAgentManager.CHROME_VERSION_MAX_RETRIES; attempt++) {
-                try {
-                    const response = await axios(request)
-                    const data: ChromeVersion = response.data
-                    return data.channels.Stable.version
-                } catch (error) {
-                    if (attempt >= UserAgentManager.CHROME_VERSION_MAX_RETRIES) {
-                        throw error
-                    }
-
-                    this.bot.logger.warn(
-                        isMobile,
-                        'USERAGENT-CHROME-VERSION',
-                        `Attempt ${attempt}/${UserAgentManager.CHROME_VERSION_MAX_RETRIES} failed: ${
-                            error instanceof Error ? error.message : String(error)
-                        }`
-                    )
-                    await this.bot.utils.wait(UserAgentManager.CHROME_VERSION_RETRY_DELAY_MS)
-                }
-            }
-
-            throw new Error('Failed to fetch Chrome version')
-        } catch (error) {
-            this.bot.logger.error(
-                isMobile,
-                'USERAGENT-CHROME-VERSION',
-                `An error occurred: ${error instanceof Error ? error.message : String(error)}`
-            )
-            throw error
-        }
+        const data = await this.fetchWithRetry<ChromeVersion>(
+            {
+                url: 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.json',
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            },
+            'USERAGENT-CHROME-VERSION',
+            isMobile
+        )
+        return data.channels.Stable.version
     }
 
     async getEdgeVersions(isMobile: boolean) {
-        try {
-            const request = {
+        const data = await this.fetchWithRetry<EdgeVersion[]>(
+            {
                 url: 'https://edgeupdates.microsoft.com/api/products',
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }
-
-            const response = await axios(request)
-            const data: EdgeVersion[] = response.data
-            const stable = data.find(x => x.Product == 'Stable') as EdgeVersion
-            return {
-                android: stable.Releases.find(x => x.Platform == 'Android')?.ProductVersion,
-                windows: stable.Releases.find(x => x.Platform == 'Windows' && x.Architecture == 'x64')?.ProductVersion
-            }
-        } catch (error) {
-            this.bot.logger.error(
-                isMobile,
-                'USERAGENT-EDGE-VERSION',
-                `An error occurred: ${error instanceof Error ? error.message : String(error)}`
-            )
-            throw error
+                headers: { 'Content-Type': 'application/json' }
+            },
+            'USERAGENT-EDGE-VERSION',
+            isMobile
+        )
+        const stable = data.find(x => x.Product == 'Stable') as EdgeVersion
+        return {
+            android: stable.Releases.find(x => x.Platform == 'Android')?.ProductVersion,
+            windows: stable.Releases.find(x => x.Platform == 'Windows' && x.Architecture == 'x64')?.ProductVersion
         }
+    }
+
+    private async fetchWithRetry<T>(config: AxiosRequestConfig, tag: string, isMobile: boolean): Promise<T> {
+        const max = UserAgentManager.VERSION_REQUEST_MAX_RETRIES
+        let lastError: unknown
+
+        for (let attempt = 1; attempt <= max; attempt++) {
+            try {
+                const response = await axios({
+                    timeout: UserAgentManager.VERSION_REQUEST_TIMEOUT_MS,
+                    ...config
+                })
+                return response.data as T
+            } catch (error) {
+                lastError = error
+                if (attempt >= max) break
+
+                this.bot.logger.warn(
+                    isMobile,
+                    tag,
+                    `Attempt ${attempt}/${max} failed: ${error instanceof Error ? error.message : String(error)}`
+                )
+                await this.bot.utils.wait(UserAgentManager.VERSION_REQUEST_RETRY_DELAY_MS)
+            }
+        }
+
+        this.bot.logger.error(
+            isMobile,
+            tag,
+            `An error occurred: ${lastError instanceof Error ? lastError.message : String(lastError)}`
+        )
+        throw lastError
     }
 
     getSystemComponents(mobile: boolean): string {
