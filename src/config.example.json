@@ -4,7 +4,7 @@
     "headless": false,
     "clusters": 1,
     "errorDiagnostics": false,
-    "ensureStreakProtection": true,
+    "ensureStreakProtection": false,
     "workers": {
         "doDailySet": true,
         "doClaimBonusPoints": true,
@@ -18,7 +18,7 @@
         "doReadToEarn": true
     },
     "searchOnBingLocalQueries": false,
-    "globalTimeout": "30sec",
+    "globalTimeout": "60sec",
     "searchSettings": {
         "scrollRandomResults": false,
         "clickRandomResults": false,

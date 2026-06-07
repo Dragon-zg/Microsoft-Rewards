@@ -1,16 +1,16 @@
 services:
-    microsoft-rewards-script:
-        image: ghcr.io/thenetsky/microsoft-rewards-script:latest
-        container_name: microsoft-rewards-script
+    microsoft-rewards:
+        image: ghcr.io/dragon-zg/microsoft-rewards:latest
+        container_name: microsoft-rewards
         restart: unless-stopped
         volumes:
             - ./config:/usr/src/microsoft-rewards-script/dist/config
             - ./sessions:/usr/src/microsoft-rewards-script/dist/browser/sessions
         environment:
             # ── Scheduling ───────────────────────────────────────────────────
-            TZ: 'America/Toronto'
+            TZ: 'Asia/Shanghai'
             NODE_ENV: 'production'
-            CRON_SCHEDULE: '0 7 * * *' # use crontab.guru to customize your schedule
+            CRON_SCHEDULE: '28 8 * * *' # use crontab.guru to customize your schedule
             RUN_ON_START: 'true' # run script immediately on container start
             SKIP_RANDOM_SLEEP: 'false'
             #MIN_SLEEP_MINUTES: "5"
