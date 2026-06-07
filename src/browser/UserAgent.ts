@@ -8,7 +8,8 @@ export class UserAgentManager {
     private static readonly NOT_A_BRAND_VERSION = '99'
     private static readonly VERSION_REQUEST_TIMEOUT_MS = 20000
     private static readonly VERSION_REQUEST_MAX_RETRIES = 10
-    private static readonly VERSION_REQUEST_RETRY_DELAY_MS = 1000
+    private static readonly VERSION_REQUEST_RETRY_BASE_DELAY_MS = 1000
+    private static readonly VERSION_REQUEST_RETRY_MAX_DELAY_MS = 30000
 
     constructor(private bot: MicrosoftRewardsBot) {}
 
@@ -94,7 +95,11 @@ export class UserAgentManager {
                     tag,
                     `Attempt ${attempt}/${max} failed: ${error instanceof Error ? error.message : String(error)}`
                 )
-                await this.bot.utils.wait(UserAgentManager.VERSION_REQUEST_RETRY_DELAY_MS)
+                const delay = Math.min(
+                    UserAgentManager.VERSION_REQUEST_RETRY_BASE_DELAY_MS * 2 ** (attempt - 1),
+                    UserAgentManager.VERSION_REQUEST_RETRY_MAX_DELAY_MS
+                )
+                await this.bot.utils.wait(delay)
             }
         }
 
