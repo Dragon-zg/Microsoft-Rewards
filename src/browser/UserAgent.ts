@@ -6,6 +6,9 @@ import type { MicrosoftRewardsBot } from '../index'
 
 export class UserAgentManager {
     private static readonly NOT_A_BRAND_VERSION = '99'
+    private static readonly CHROME_VERSION_TIMEOUT_MS = 20000
+    private static readonly CHROME_VERSION_MAX_RETRIES = 10
+    private static readonly CHROME_VERSION_RETRY_DELAY_MS = 1000
 
     constructor(private bot: MicrosoftRewardsBot) {}
 
@@ -42,18 +45,38 @@ export class UserAgentManager {
     }
 
     async getChromeVersion(isMobile: boolean): Promise<string> {
+        const request = {
+            url: 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.json',
+            method: 'GET',
+            timeout: UserAgentManager.CHROME_VERSION_TIMEOUT_MS,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }
+
         try {
-            const request = {
-                url: 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.json',
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
+            for (let attempt = 1; attempt <= UserAgentManager.CHROME_VERSION_MAX_RETRIES; attempt++) {
+                try {
+                    const response = await axios(request)
+                    const data: ChromeVersion = response.data
+                    return data.channels.Stable.version
+                } catch (error) {
+                    if (attempt >= UserAgentManager.CHROME_VERSION_MAX_RETRIES) {
+                        throw error
+                    }
+
+                    this.bot.logger.warn(
+                        isMobile,
+                        'USERAGENT-CHROME-VERSION',
+                        `Attempt ${attempt}/${UserAgentManager.CHROME_VERSION_MAX_RETRIES} failed: ${
+                            error instanceof Error ? error.message : String(error)
+                        }`
+                    )
+                    await this.bot.utils.wait(UserAgentManager.CHROME_VERSION_RETRY_DELAY_MS)
                 }
             }
 
-            const response = await this.bot.axios.request(request)
-            const data: ChromeVersion = response.data
-            return data.channels.Stable.version
+            throw new Error('Failed to fetch Chrome version')
         } catch (error) {
             this.bot.logger.error(
                 isMobile,
