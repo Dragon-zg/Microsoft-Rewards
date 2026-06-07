@@ -80,10 +80,13 @@ class AxiosClient {
 
     public async request(config: AxiosRequestConfig, bypassProxy = false): Promise<AxiosResponse> {
         if (bypassProxy) {
-            const bypassInstance = axios.create()
+            const bypassInstance = axios.create({
+                timeout: 20000
+            })
             axiosRetry(bypassInstance, {
                 retries: 3,
-                retryDelay: axiosRetry.exponentialDelay
+                retryDelay: axiosRetry.exponentialDelay,
+                shouldResetTimeout: true
             })
             return bypassInstance.request(config)
         }
