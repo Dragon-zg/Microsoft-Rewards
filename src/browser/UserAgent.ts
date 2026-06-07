@@ -51,7 +51,7 @@ export class UserAgentManager {
                 }
             }
 
-            const response = await axios(request)
+            const response = await this.bot.axios.request(request)
             const data: ChromeVersion = response.data
             return data.channels.Stable.version
         } catch (error) {
