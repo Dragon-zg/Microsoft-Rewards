@@ -199,7 +199,7 @@ Edit `config.json` to customize behavior, or set `CONFIG_*` environment variable
 | `webhook.wxpusher.uids`                  | string[] | `[]`                                                 | WxPusher UID recipients           | `CONFIG_WXPUSHER_UIDS` \*               |
 | `webhook.wxpusher.topicIds`              | number[] | `[]`                                                 | WxPusher topic recipients         | `CONFIG_WXPUSHER_TOPIC_IDS` \*          |
 | `webhook.wxpusher.url`                   | string   | `""`                                                 | Optional original link            | `CONFIG_WXPUSHER_URL`                   |
-| `webhook.wxpusher.summary`               | string   | `"Microsoft Rewards points report"`                  | WxPusher notification summary     | `CONFIG_WXPUSHER_SUMMARY`               |
+| `webhook.wxpusher.summary`               | string   | `"Microsoft Rewards"`                                | WxPusher notification summary     | `CONFIG_WXPUSHER_SUMMARY`               |
 | `webhook.wxpusher.verifyPayType`         | number   | `0`                                                  | WxPusher paid-subscription check  | `CONFIG_WXPUSHER_VERIFY_PAY_TYPE`       |
 | `webhook.webhookLogFilter.enabled`       | boolean  | `false`                                              | Enable webhook log filtering      | `CONFIG_WEBHOOK_LOG_FILTER_ENABLED`     |
 | `webhook.webhookLogFilter.mode`          | string   | `"whitelist"`                                        | Filter mode (whitelist/blacklist) | `CONFIG_WEBHOOK_LOG_FILTER_MODE`        |

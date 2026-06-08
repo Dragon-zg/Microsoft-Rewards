@@ -112,16 +112,10 @@ function buildAccountRows(accountStats: PushAccountStats[]): string {
     return rows + hiddenRow
 }
 
-function buildSummary(config: WebhookWxPusherConfig, accountStats: PushAccountStats[]): string {
-    const successfulStats = accountStats.filter(stat => stat.success)
-    const totalCollectedPoints = successfulStats.reduce((sum, stat) => sum + stat.collectedPoints, 0)
-    const totalFinalPoints = successfulStats.reduce((sum, stat) => sum + stat.finalPoints, 0)
-    const prefix = config.summary?.trim() || 'Microsoft Rewards 积分报告'
+function buildSummary(config: WebhookWxPusherConfig): string {
+    const prefix = config.summary?.trim() || 'Microsoft Rewards'
 
-    return truncate(
-        `${prefix} | 增加 ${formatDelta(totalCollectedPoints)} | 当前 ${formatPoints(totalFinalPoints)}`,
-        SUMMARY_LIMIT
-    )
+    return truncate(prefix, SUMMARY_LIMIT)
 }
 
 export function buildWxPusherSummaryHtml(accountStats: PushAccountStats[], runStartTime: number): string {
@@ -215,7 +209,7 @@ export async function sendWxPusherSummary(
     const data = {
         appToken,
         content: buildWxPusherSummaryHtml(accountStats, runStartTime),
-        summary: buildSummary(config, accountStats),
+        summary: buildSummary(config),
         contentType: 2,
         uids: uids.length > 0 ? uids : undefined,
         topicIds: topicIds.length > 0 ? topicIds : undefined,

@@ -61,7 +61,7 @@ services:
             #CONFIG_WXPUSHER_APP_TOKEN: 'AT_xxx'
             #CONFIG_WXPUSHER_UIDS: 'UID_xxx'
             #CONFIG_WXPUSHER_TOPIC_IDS: ''
-            #CONFIG_WXPUSHER_SUMMARY: 'Microsoft Rewards points report'
+            #CONFIG_WXPUSHER_SUMMARY: 'Microsoft Rewards'
             #
             # Webhook log filter (controls which events trigger webhook notifications, enable when using NTFY):
             #CONFIG_WEBHOOK_LOG_FILTER_ENABLED: 'false'

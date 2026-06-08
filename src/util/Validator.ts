@@ -163,7 +163,7 @@ const defaultConfig: Config = {
             uids: [],
             topicIds: [],
             url: '',
-            summary: 'Microsoft Rewards points report',
+            summary: 'Microsoft Rewards',
             verifyPayType: 0
         },
         webhookLogFilter: {
