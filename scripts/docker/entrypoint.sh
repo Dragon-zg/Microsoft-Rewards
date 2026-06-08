@@ -175,6 +175,10 @@ fi
 #      CONFIG_NTFY_ENABLED / CONFIG_NTFY_URL / CONFIG_NTFY_TOPIC / CONFIG_NTFY_TOKEN
 #      CONFIG_NTFY_TITLE / CONFIG_NTFY_PRIORITY
 #      CONFIG_NTFY_TAGS                  → comma-separated e.g. "bot,notify"
+#      CONFIG_WXPUSHER_ENABLED / CONFIG_WXPUSHER_APP_TOKEN
+#      CONFIG_WXPUSHER_UIDS              → comma-separated UID list
+#      CONFIG_WXPUSHER_TOPIC_IDS         → comma-separated numeric topic IDs
+#      CONFIG_WXPUSHER_URL / CONFIG_WXPUSHER_SUMMARY / CONFIG_WXPUSHER_VERIFY_PAY_TYPE
 #
 #    Webhook log filter:
 #      CONFIG_WEBHOOK_LOG_FILTER_ENABLED  → .webhook.webhookLogFilter.enabled
@@ -308,6 +312,19 @@ _cfg_array() {
   jq --argjson v "$json_array" "$path = \$v" "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
   echo "[entrypoint]   $path = [$val]"
 }
+_cfg_number_array() {
+  # _cfg_number_array <value-or-unset-sentinel> <jq_path>
+  local val="$1" path="$2"
+  [ "$val" = "__UNSET__" ] && return 0
+  local json_array
+  if [ -z "$val" ]; then
+    json_array="[]"
+  else
+    json_array=$(echo "$val" | jq -Rc '[split(",") | .[] | ltrimstr(" ") | rtrimstr(" ") | select(length > 0) | tonumber]')
+  fi
+  jq --argjson v "$json_array" "$path = \$v" "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
+  echo "[entrypoint]   $path = [$val]"
+}
 _cfg_array "${CONFIG_LOG_FILTER_LEVELS-__UNSET__}"    '.consoleLogFilter.levels'
 _cfg_array "${CONFIG_LOG_FILTER_KEYWORDS-__UNSET__}"  '.consoleLogFilter.keywords'
 
@@ -323,6 +340,15 @@ _cfg "${CONFIG_NTFY_TOKEN:-}"     '.webhook.ntfy.token'     string
 _cfg "${CONFIG_NTFY_TITLE:-}"     '.webhook.ntfy.title'     string
 _cfg "${CONFIG_NTFY_PRIORITY:-}"  '.webhook.ntfy.priority'  number
 _cfg_array "${CONFIG_NTFY_TAGS-__UNSET__}"  '.webhook.ntfy.tags'
+
+# WxPusher summary push
+_cfg "${CONFIG_WXPUSHER_ENABLED:-}"           '.webhook.wxpusher.enabled'           bool
+_cfg "${CONFIG_WXPUSHER_APP_TOKEN:-}"         '.webhook.wxpusher.appToken'          string
+_cfg_array "${CONFIG_WXPUSHER_UIDS-__UNSET__}"  '.webhook.wxpusher.uids'
+_cfg_number_array "${CONFIG_WXPUSHER_TOPIC_IDS-__UNSET__}"  '.webhook.wxpusher.topicIds'
+_cfg "${CONFIG_WXPUSHER_URL:-}"               '.webhook.wxpusher.url'               string
+_cfg "${CONFIG_WXPUSHER_SUMMARY:-}"           '.webhook.wxpusher.summary'           string
+_cfg "${CONFIG_WXPUSHER_VERIFY_PAY_TYPE:-}"   '.webhook.wxpusher.verifyPayType'     number
 
 # Webhook log filter
 _cfg "${CONFIG_WEBHOOK_LOG_FILTER_ENABLED:-}"  '.webhook.webhookLogFilter.enabled'  bool

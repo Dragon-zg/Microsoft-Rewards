@@ -41,6 +41,17 @@ const WebhookSchema = z.object({
             priority: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]).optional()
         })
         .optional(),
+    wxpusher: z
+        .object({
+            enabled: z.boolean().optional(),
+            appToken: z.string(),
+            uids: z.array(z.string()).optional(),
+            topicIds: z.array(z.coerce.number().int().nonnegative()).optional(),
+            url: z.string().optional(),
+            summary: z.string().optional(),
+            verifyPayType: z.union([z.literal(0), z.literal(1), z.literal(2)]).optional()
+        })
+        .optional(),
     webhookLogFilter: LogFilterSchema
 })
 
@@ -146,6 +157,15 @@ const defaultConfig: Config = {
         regexPatterns: []
     },
     webhook: {
+        wxpusher: {
+            enabled: false,
+            appToken: '',
+            uids: [],
+            topicIds: [],
+            url: '',
+            summary: 'Microsoft Rewards points report',
+            verifyPayType: 0
+        },
         webhookLogFilter: {
             enabled: false,
             mode: 'whitelist',

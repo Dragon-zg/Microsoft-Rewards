@@ -60,6 +60,15 @@
             "tags": ["bot", "notify"],
             "priority": 3
         },
+        "wxpusher": {
+            "enabled": false,
+            "appToken": "",
+            "uids": [],
+            "topicIds": [],
+            "url": "",
+            "summary": "Microsoft Rewards points report",
+            "verifyPayType": 0
+        },
         "webhookLogFilter": {
             "enabled": false,
             "mode": "whitelist",

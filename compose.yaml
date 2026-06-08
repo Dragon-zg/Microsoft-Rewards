@@ -56,6 +56,13 @@ services:
             #CONFIG_NTFY_TITLE: 'Microsoft-Rewards-Script'
             #CONFIG_NTFY_PRIORITY: '3'
             #
+            # WxPusher summary push:
+            #CONFIG_WXPUSHER_ENABLED: 'true'
+            #CONFIG_WXPUSHER_APP_TOKEN: 'AT_xxx'
+            #CONFIG_WXPUSHER_UIDS: 'UID_xxx'
+            #CONFIG_WXPUSHER_TOPIC_IDS: ''
+            #CONFIG_WXPUSHER_SUMMARY: 'Microsoft Rewards points report'
+            #
             # Webhook log filter (controls which events trigger webhook notifications, enable when using NTFY):
             #CONFIG_WEBHOOK_LOG_FILTER_ENABLED: 'false'
             #CONFIG_WEBHOOK_LOG_FILTER_MODE: 'whitelist'      # whitelist or blacklist

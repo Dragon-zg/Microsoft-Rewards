@@ -23,6 +23,7 @@ import type { Account } from './interface/Account'
 import AxiosClient from './util/Axios'
 import { sendDiscord, flushDiscordQueue } from './logging/Discord'
 import { sendNtfy, flushNtfyQueue } from './logging/Ntfy'
+import { sendRunSummaryPush as sendPushRunSummary, flushPushQueues } from './push'
 import type { DashboardData } from './interface/DashboardData'
 import type { AppDashboardData } from './interface/AppDashBoardData'
 import { PanelFlyoutData } from './interface/PanelFlyoutData'
@@ -58,7 +59,7 @@ export function getCurrentContext(): ExecutionContext {
 }
 
 async function flushAllWebhooks(timeoutMs = 5000): Promise<void> {
-    await Promise.allSettled([flushDiscordQueue(timeoutMs), flushNtfyQueue(timeoutMs)])
+    await Promise.allSettled([flushDiscordQueue(timeoutMs), flushNtfyQueue(timeoutMs), flushPushQueues(timeoutMs)])
 }
 
 interface UserData {
@@ -232,6 +233,7 @@ export class MicrosoftRewardsBot {
                     'green'
                 )
 
+                await this.sendRunSummaryPush(allAccountStats, runStartTime)
                 await flushAllWebhooks()
 
                 process.exit(hadWorkerFailure ? 1 : 0)
@@ -376,11 +378,16 @@ export class MicrosoftRewardsBot {
                 'green'
             )
 
+            await this.sendRunSummaryPush(accountStats, runStartTime)
             await flushAllWebhooks()
             process.exit(0)
         }
 
         return accountStats
+    }
+
+    private async sendRunSummaryPush(accountStats: AccountStats[], runStartTime: number): Promise<void> {
+        await sendPushRunSummary(this.config, accountStats, runStartTime)
     }
 
     async Main(account: Account): Promise<{ initialPoints: number; collectedPoints: number }> {
