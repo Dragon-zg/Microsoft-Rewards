@@ -38,6 +38,7 @@ export const URLs = {
     platform: {
         origin: PLATFORM,
         me: (channel: string) => `${PLATFORM}/dapi/me?channel=${channel}&options=613`,
+        meSAIOS: (channel: string) => `${PLATFORM}/dapi/me?channel=${channel}&options=612`,
         activities: `${PLATFORM}/dapi/me/activities`
     },
     auth: {

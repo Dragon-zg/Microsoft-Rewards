@@ -534,6 +534,7 @@ export class MicrosoftRewardsBot {
 
                     if (this.config.workers.doDailySet) await this.workers.doDailySet(data)
                     if (this.config.workers.doMorePromotions) await this.workers.doMorePromotions(data)
+                    await this.workers.doOtherPromotions()
                     if (this.config.workers.doDailyCheckIn) await this.activities.doDailyCheckIn()
                     if (this.config.workers.doAppPromotions) await this.workers.doAppPromotions(appData)
                     if (this.config.workers.doReadToEarn) await this.activities.doReadToEarn()
@@ -548,6 +549,7 @@ export class MicrosoftRewardsBot {
                     if (this.config.workers.doDailySet) await this.workers.doDailySet(data)
                     if (this.config.workers.doActivateSearchPerk) await this.activities.doActivateSearchPerk(data)
                     if (this.config.workers.doMorePromotions) await this.workers.doMorePromotions(data)
+                    await this.workers.doOtherPromotions()
                     if (this.config.workers.doDailyCheckIn) await this.activities.doDailyCheckIn()
                     if (this.config.workers.doAppPromotions) await this.workers.doAppPromotions(appData)
                     if (this.config.workers.doReadToEarn) await this.activities.doReadToEarn()
