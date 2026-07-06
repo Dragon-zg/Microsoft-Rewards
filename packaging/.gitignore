@@ -1,0 +1,6 @@
+# Build cache and output (never commit these)
+.cache/
+.staging/
+output/
+node_modules/
+package-lock.json

@@ -1,6 +1,6 @@
 const REWARDS = 'https://rewards.bing.com'
 const PLATFORM = 'https://prod.rewardsplatform.microsoft.com'
-const BING = 'https://www.bing.com'
+const BING = 'https://cn.bing.com'
 const LOGIN_LIVE = 'https://login.live.com'
 const LOGIN_MS = 'https://login.microsoftonline.com'
 const EDGE = 'https://edgeupdates.microsoft.com'
@@ -41,7 +41,7 @@ export const URLs = {
         activities: `${PLATFORM}/dapi/me/activities`
     },
     auth: {
-        bingSignIn: `${BING}/fd/auth/signin?action=interactive&provider=windows_live_id&return_url=https%3A%2F%2Fwww.bing.com%2F`,
+        bingSignIn: `${BING}/fd/auth/signin?action=interactive&provider=windows_live_id&return_url=https%3A%2F%2Fcn.bing.com%2F`,
         loginLive: `${LOGIN_LIVE}/`,
         oauthAuthorize: `${LOGIN_LIVE}/oauth20_authorize.srf`,
         oauthRedirect: `${LOGIN_LIVE}/oauth20_desktop.srf`,
