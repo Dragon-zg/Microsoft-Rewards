@@ -1,10 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import axiosRetry from 'axios-retry'
-import { HttpProxyAgent } from 'http-proxy-agent'
-import { HttpsProxyAgent } from 'https-proxy-agent'
-import { SocksProxyAgent } from 'socks-proxy-agent'
-import { URL } from 'url'
 import type { AccountProxy } from '../interface/Account'
+import { createProxyAgent } from './ProxyAgent'
 
 class AxiosClient {
     private instance: AxiosInstance
@@ -18,7 +15,7 @@ class AxiosClient {
         })
 
         if (this.account.url && this.account.proxyAxios) {
-            const agent = this.getAgentForProxy(this.account)
+            const agent = createProxyAgent(this.account, 'account')
             this.instance.defaults.httpAgent = agent
             this.instance.defaults.httpsAgent = agent
         }
@@ -35,47 +32,6 @@ class AxiosClient {
                 return status === 429 || (status >= 500 && status <= 599)
             }
         })
-    }
-
-    private getAgentForProxy(
-        proxyConfig: AccountProxy
-    ): HttpProxyAgent<string> | HttpsProxyAgent<string> | SocksProxyAgent {
-        const { url: baseUrl, port, username, password } = proxyConfig
-
-        let urlObj: URL
-        try {
-            urlObj = new URL(baseUrl)
-        } catch {
-            try {
-                urlObj = new URL(`http://${baseUrl}`)
-            } catch {
-                throw new Error(`Invalid proxy URL format: ${baseUrl}`)
-            }
-        }
-
-        const protocol = urlObj.protocol.toLowerCase()
-        let proxyUrl: string
-
-        if (username && password) {
-            urlObj.username = encodeURIComponent(username)
-            urlObj.password = encodeURIComponent(password)
-            urlObj.port = port.toString()
-            proxyUrl = urlObj.toString()
-        } else {
-            proxyUrl = `${protocol}//${urlObj.hostname}:${port}`
-        }
-
-        switch (protocol) {
-            case 'http:':
-                return new HttpProxyAgent(proxyUrl)
-            case 'https:':
-                return new HttpsProxyAgent(proxyUrl)
-            case 'socks4:':
-            case 'socks5:':
-                return new SocksProxyAgent(proxyUrl)
-            default:
-                throw new Error(`Unsupported proxy protocol: ${protocol}. Only HTTP(S) and SOCKS4/5 are supported!`)
-        }
     }
 
     public async request(config: AxiosRequestConfig, bypassProxy = false): Promise<AxiosResponse> {

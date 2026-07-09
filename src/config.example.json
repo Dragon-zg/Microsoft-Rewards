@@ -44,7 +44,14 @@
         "regexPatterns": []
     },
     "proxy": {
-        "queryEngine": true
+        "queryEngine": true,
+        "userAgentVersion": {
+            "enabled": false,
+            "url": "",
+            "port": 0,
+            "username": "",
+            "password": ""
+        }
     },
     "webhook": {
         "discord": {

@@ -44,6 +44,13 @@ services:
             #CONFIG_SEARCH_DELAY_MIN: '30sec'
             #CONFIG_SEARCH_DELAY_MAX: '1min'
             #
+            # User-Agent version lookup proxy:
+            #CONFIG_PROXY_USER_AGENT_VERSION_ENABLED: 'false'
+            #CONFIG_PROXY_USER_AGENT_VERSION_URL: ''
+            #CONFIG_PROXY_USER_AGENT_VERSION_PORT: '0'
+            #CONFIG_PROXY_USER_AGENT_VERSION_USERNAME: ''
+            #CONFIG_PROXY_USER_AGENT_VERSION_PASSWORD: ''
+            #
             # Discord webhook:
             #CONFIG_DISCORD_ENABLED: 'true'
             #CONFIG_DISCORD_URL: 'https://discord.com/api/webhooks/...'

@@ -177,9 +177,16 @@ Edit `config.json` to customize behavior, or set `CONFIG_*` environment variable
 
 ### Proxy
 
-| Setting             | Type    | Default | Description                 | Docker environment variable |
-| ------------------- | ------- | ------- | --------------------------- | --------------------------- |
-| `proxy.queryEngine` | boolean | `true`  | Proxy query engine requests | `CONFIG_PROXY_QUERY_ENGINE` |
+| Setting                           | Type    | Default | Description                               | Docker environment variable                |
+| --------------------------------- | ------- | ------- | ----------------------------------------- | ------------------------------------------ |
+| `proxy.queryEngine`               | boolean | `true`  | Proxy query engine requests               | `CONFIG_PROXY_QUERY_ENGINE`                |
+| `proxy.userAgentVersion.enabled`  | boolean | `false` | Proxy Chrome/Edge version lookup requests | `CONFIG_PROXY_USER_AGENT_VERSION_ENABLED`  |
+| `proxy.userAgentVersion.url`      | string  | `""`    | Version lookup proxy URL or host          | `CONFIG_PROXY_USER_AGENT_VERSION_URL`      |
+| `proxy.userAgentVersion.port`     | number  | `0`     | Version lookup proxy port                 | `CONFIG_PROXY_USER_AGENT_VERSION_PORT`     |
+| `proxy.userAgentVersion.username` | string  | `""`    | Optional version lookup proxy username    | `CONFIG_PROXY_USER_AGENT_VERSION_USERNAME` |
+| `proxy.userAgentVersion.password` | string  | `""`    | Optional version lookup proxy password    | `CONFIG_PROXY_USER_AGENT_VERSION_PASSWORD` |
+
+`proxy.userAgentVersion` only affects the startup requests that fetch current Chrome and Edge versions for User-Agent generation. It supports `http://`, `https://`, `socks4://`, and `socks5://` proxy URLs.
 
 ### Webhooks
 

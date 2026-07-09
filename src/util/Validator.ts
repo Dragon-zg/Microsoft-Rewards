@@ -89,7 +89,14 @@ export const ConfigSchema = z.object({
     }),
     debugLogs: z.boolean(),
     proxy: z.object({
-        queryEngine: z.boolean()
+        queryEngine: z.boolean(),
+        userAgentVersion: z.object({
+            enabled: z.boolean(),
+            url: z.string(),
+            port: z.number().int().nonnegative(),
+            username: z.string(),
+            password: z.string()
+        })
     }),
     consoleLogFilter: LogFilterSchema,
     webhook: WebhookSchema
@@ -148,7 +155,16 @@ const defaultConfig: Config = {
         readDelay: { min: '30sec', max: '1min' }
     },
     debugLogs: false,
-    proxy: { queryEngine: true },
+    proxy: {
+        queryEngine: true,
+        userAgentVersion: {
+            enabled: false,
+            url: '',
+            port: 0,
+            username: '',
+            password: ''
+        }
+    },
     consoleLogFilter: {
         enabled: false,
         mode: 'whitelist',

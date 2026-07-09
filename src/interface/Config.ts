@@ -35,6 +35,15 @@ export interface ConfigDelay {
 
 export interface ConfigProxy {
     queryEngine: boolean
+    userAgentVersion: ConfigUserAgentVersionProxy
+}
+
+export interface ConfigUserAgentVersionProxy {
+    enabled: boolean
+    url: string
+    port: number
+    username: string
+    password: string
 }
 
 export interface ConfigWorkers {

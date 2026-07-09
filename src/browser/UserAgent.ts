@@ -3,6 +3,7 @@ import type { BrowserFingerprintWithHeaders } from 'fingerprint-generator'
 
 import type { ChromeVersion, EdgeVersion } from '../interface/UserAgentUtil'
 import type { MicrosoftRewardsBot } from '../index'
+import { createProxyAgent } from '../util/ProxyAgent'
 
 export class UserAgentManager {
     private static readonly NOT_A_BRAND_VERSION = '99'
@@ -78,12 +79,18 @@ export class UserAgentManager {
     private async fetchWithRetry<T>(config: AxiosRequestConfig, tag: string, isMobile: boolean): Promise<T> {
         const max = UserAgentManager.VERSION_REQUEST_MAX_RETRIES
         let lastError: unknown
+        const proxyAgent = this.getVersionProxyAgent(tag, isMobile)
 
         for (let attempt = 1; attempt <= max; attempt++) {
             try {
                 const response = await axios({
                     timeout: UserAgentManager.VERSION_REQUEST_TIMEOUT_MS,
-                    ...config
+                    ...config,
+                    ...(proxyAgent && {
+                        httpAgent: proxyAgent,
+                        httpsAgent: proxyAgent,
+                        proxy: false
+                    })
                 })
                 return response.data as T
             } catch (error) {
@@ -109,6 +116,22 @@ export class UserAgentManager {
             `An error occurred: ${lastError instanceof Error ? lastError.message : String(lastError)}`
         )
         throw lastError
+    }
+
+    private getVersionProxyAgent(tag: string, isMobile: boolean) {
+        const proxyConfig = this.bot.config.proxy.userAgentVersion
+        if (!proxyConfig.enabled) return undefined
+
+        try {
+            return createProxyAgent(proxyConfig, 'userAgentVersion')
+        } catch (error) {
+            this.bot.logger.error(
+                isMobile,
+                tag,
+                `Invalid userAgentVersion proxy config: ${error instanceof Error ? error.message : String(error)}`
+            )
+            throw error
+        }
     }
 
     getSystemComponents(mobile: boolean): string {

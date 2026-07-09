@@ -163,6 +163,11 @@ fi
 #
 #    Proxy:
 #      CONFIG_PROXY_QUERY_ENGINE         → .proxy.queryEngine
+#      CONFIG_PROXY_USER_AGENT_VERSION_ENABLED  → .proxy.userAgentVersion.enabled
+#      CONFIG_PROXY_USER_AGENT_VERSION_URL      → .proxy.userAgentVersion.url
+#      CONFIG_PROXY_USER_AGENT_VERSION_PORT     → .proxy.userAgentVersion.port
+#      CONFIG_PROXY_USER_AGENT_VERSION_USERNAME → .proxy.userAgentVersion.username
+#      CONFIG_PROXY_USER_AGENT_VERSION_PASSWORD → .proxy.userAgentVersion.password
 #
 #    Console log filter:
 #      CONFIG_LOG_FILTER_ENABLED         → .consoleLogFilter.enabled
@@ -292,6 +297,11 @@ _cfg "${CONFIG_SEARCH_ON_BING_LOCAL:-}"    '.searchOnBingLocalQueries'          
 
 # Proxy
 _cfg "${CONFIG_PROXY_QUERY_ENGINE:-}"  '.proxy.queryEngine'  bool
+_cfg "${CONFIG_PROXY_USER_AGENT_VERSION_ENABLED:-}"   '.proxy.userAgentVersion.enabled'   bool
+_cfg "${CONFIG_PROXY_USER_AGENT_VERSION_URL:-}"       '.proxy.userAgentVersion.url'       string
+_cfg "${CONFIG_PROXY_USER_AGENT_VERSION_PORT:-}"      '.proxy.userAgentVersion.port'      number
+_cfg "${CONFIG_PROXY_USER_AGENT_VERSION_USERNAME:-}"  '.proxy.userAgentVersion.username'  string
+_cfg "${CONFIG_PROXY_USER_AGENT_VERSION_PASSWORD:-}"  '.proxy.userAgentVersion.password'  string
 
 # Console log filter
 # Levels and keywords accept comma-separated values e.g. "error,warn"
