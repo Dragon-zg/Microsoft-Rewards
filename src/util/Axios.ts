@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import axiosRetry from 'axios-retry'
 import type { AccountProxy } from '../interface/Account'
-import { createProxyAgent } from './ProxyAgent'
+import { createProxyAgents } from './ProxyAgent'
 
 class AxiosClient {
     private instance: AxiosInstance
@@ -15,9 +15,9 @@ class AxiosClient {
         })
 
         if (this.account.url && this.account.proxyAxios) {
-            const agent = createProxyAgent(this.account, 'account')
-            this.instance.defaults.httpAgent = agent
-            this.instance.defaults.httpsAgent = agent
+            const proxyAgents = createProxyAgents(this.account, 'account')
+            this.instance.defaults.httpAgent = proxyAgents.httpAgent
+            this.instance.defaults.httpsAgent = proxyAgents.httpsAgent
         }
 
         axiosRetry(this.instance, {

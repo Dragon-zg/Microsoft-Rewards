@@ -10,9 +10,12 @@ export interface ProxyAgentConfig {
     password?: string
 }
 
-export type ProxyAgent = HttpProxyAgent<string> | HttpsProxyAgent<string> | SocksProxyAgent
+export interface ProxyAgents {
+    httpAgent: HttpProxyAgent<string> | SocksProxyAgent
+    httpsAgent: HttpsProxyAgent<string> | SocksProxyAgent
+}
 
-export function createProxyAgent(proxyConfig: ProxyAgentConfig, label = 'proxy'): ProxyAgent {
+export function createProxyAgents(proxyConfig: ProxyAgentConfig, label = 'proxy'): ProxyAgents {
     const { url: baseUrl, port, username, password } = proxyConfig
 
     if (!baseUrl || !port) {
@@ -48,12 +51,19 @@ export function createProxyAgent(proxyConfig: ProxyAgentConfig, label = 'proxy')
 
     switch (protocol) {
         case 'http:':
-            return new HttpProxyAgent(proxyUrl)
         case 'https:':
-            return new HttpsProxyAgent(proxyUrl)
+            return {
+                httpAgent: new HttpProxyAgent(proxyUrl),
+                httpsAgent: new HttpsProxyAgent(proxyUrl)
+            }
         case 'socks4:':
-        case 'socks5:':
-            return new SocksProxyAgent(proxyUrl)
+        case 'socks5:': {
+            const agent = new SocksProxyAgent(proxyUrl)
+            return {
+                httpAgent: agent,
+                httpsAgent: agent
+            }
+        }
         default:
             throw new Error(
                 `Unsupported ${label} proxy protocol: ${protocol}. Only HTTP(S) and SOCKS4/5 are supported!`
