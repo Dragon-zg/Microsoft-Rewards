@@ -51,6 +51,8 @@ _build_account_json() {
   local proxy_port="${9:-0}"
   local proxy_user="${10:-}"
   local proxy_pass="${11:-}"
+  local save_fp_mobile="${12:-false}"
+  local save_fp_desktop="${13:-false}"
 
   jq -n \
     --arg email "$email" \
@@ -64,6 +66,8 @@ _build_account_json() {
     --argjson proxyPort "$proxy_port" \
     --arg proxyUser "$proxy_user" \
     --arg proxyPass "$proxy_pass" \
+    --argjson saveFpMobile "$save_fp_mobile" \
+    --argjson saveFpDesktop "$save_fp_desktop" \
     '{
       email: $email,
       password: $password,
@@ -79,8 +83,8 @@ _build_account_json() {
         password: $proxyPass
       },
       saveFingerprint: {
-        mobile: false,
-        desktop: false
+        mobile: $saveFpMobile,
+        desktop: $saveFpDesktop
       }
     }'
 }
@@ -103,8 +107,10 @@ while true; do
   pport_var="ACCOUNT_${i}_PROXY_PORT";      pport="${!pport_var:-0}"
   puser_var="ACCOUNT_${i}_PROXY_USERNAME";  puser="${!puser_var:-}"
   ppass_var="ACCOUNT_${i}_PROXY_PASSWORD";  ppass="${!ppass_var:-}"
+  sfpm_var="ACCOUNT_${i}_SAVE_FINGERPRINT_MOBILE";   sfpm="${!sfpm_var:-false}"
+  sfpd_var="ACCOUNT_${i}_SAVE_FINGERPRINT_DESKTOP";  sfpd="${!sfpd_var:-false}"
 
-  account_json=$(_build_account_json "$email" "$pass" "$totp" "$rec" "$geo" "$lang" "$paxios" "$purl" "$pport" "$puser" "$ppass")
+  account_json=$(_build_account_json "$email" "$pass" "$totp" "$rec" "$geo" "$lang" "$paxios" "$purl" "$pport" "$puser" "$ppass" "$sfpm" "$sfpd")
   account_array=$(echo "$account_array" | jq ". + [$account_json]")
   i=$((i + 1))
 done

@@ -67,6 +67,8 @@ npm run start
 ```env
 ACCOUNT_1_EMAIL=you@example.com
 ACCOUNT_1_PASSWORD=your_password
+ACCOUNT_1_SAVE_FINGERPRINT_MOBILE=true
+ACCOUNT_1_SAVE_FINGERPRINT_DESKTOP=true
 ```
 
 > [!NOTE]
