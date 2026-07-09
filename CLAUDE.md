@@ -14,26 +14,28 @@ README warning: V3.x may not fully support the new Bing Rewards interface. `Logi
 # Setup: install deps, clear dist, install Chromium for patchright
 npm run pre-build
 
-# Build / typecheck
+# Build (clears dist, compiles TS, copies assets via scripts/main/copyAssets.js)
 npm run build
 
-# Run compiled output
+# Run compiled output (from project root)
 npm run start
 
 # Run TypeScript directly
 npm run ts-start
-npm run dev              # same as ts-start with -dev; loads src/accounts.dev.json, still uses src/config.json
+npm run dev              # ts-start with -dev; enables debug-level logging via process.argv
 
 # Formatting and linting
 npm run format
 npm run format:check
-npx eslint src/
+npm run lint             # eslint . (whole repo)
+npm run lint:fix
+npx eslint src/          # src only
 
 # Utilities
 npm run clear-diagnostics
-npm run clear-sessions
-npm run open-session     # opens a saved/manual browser session; expects -email handling in script
-npm run open-session:dev
+npm run clear-sessions   # clears the SQLite session store (sessions.db)
+npm run open-session     # opens a saved/manual browser session; -email handled in script
+npm run kill-chrome-win   # Windows: force-kill leftover Chrome-for-Testing processes
 
 # Docker / Nix
 npm run create-docker
@@ -41,16 +43,16 @@ docker compose up -d
 bash scripts/nix/run.sh  # runs compiled app under nix develop + xvfb-run
 ```
 
-There is no test runner or `npm test` script configured. Use `npm run build`, `npm run format:check`, and `npx eslint src/` as the available local verification commands.
+There is no test runner or `npm test` script configured. Use `npm run build`, `npm run format:check`, and `npm run lint` as the available local verification commands.
 
 ## Runtime Configuration
 
 - Node.js must satisfy `package.json` `engines.node` (`>=24.0.0`), enforced at startup by `checkNodeVersion()`.
-- Bare-metal config files are `src/accounts.json` and `src/config.json`; copy from the `.example.json` files and rebuild after changing them.
-- `src/accounts.json` is a flat account array, not an object wrapper.
-- Passing `-dev` only switches accounts loading to `src/accounts.dev.json`; config loading remains `src/config.json`.
-- `loadSessionData()` and save helpers resolve sessions under `../browser/<sessionPath>/<email>` relative to the compiled `util` directory, so the configured `sessionPath` is nested under the runtime browser directory.
-- Docker writes generated `accounts.json` and `config.json` into `dist/config/` and symlinks them into `dist/` so compiled code can load them. `CONFIG_*` env vars override config on each container start; Docker forces headless mode.
+- **Accounts are loaded from environment variables, not a JSON file.** `loadAccounts()` in `src/util/Load.ts` reads `ACCOUNT_<n>_EMAIL`, `ACCOUNT_<n>_PASSWORD`, plus optional `ACCOUNT_<n>_TOTP_SECRET`, `_RECOVERY_EMAIL`, `_GEO_LOCALE`, `_LANG_CODE`, proxy (`_PROXY_URL/PORT/USERNAME/PASSWORD/_PROXY_HTTP`), and `_SAVE_FINGERPRINT_MOBILE/DESKTOP`. It iterates from index 1 until an `EMAIL` is missing; a missing `PASSWORD` is a hard error. A `.env` file is auto-loaded (root → dist → src search order) if present — see `env.example` for the full list.
+- **`config.json` is searched** in this order by `resolveProjectFile()`: current working directory → project root → `dist/` → `src/`. Keep `config.example.json` (project root) as the template; copy to `config.json` and rebuild after changes.
+- `-dev` only enables debug-level logging (`process.argv.includes('-dev')` in `Logger.ts`); it does **not** change which accounts/config are loaded.
+- `loadSessionData()` and the `SessionStore` helpers (`src/util/SessionStore.ts`) persist sessions in a **SQLite database** (`sessions.db`, WAL mode) at `<cwd>/<config.sessionPath>/`. The default `sessionPath` is `sessions`. Each row is keyed by `(email, platform)` where platform is `mobile` or `desktop`, storing the Playwright `storageState` and the generated `fingerprint` as JSON. `closeSessionStore()` checkpoints WAL and closes the DB handle on shutdown.
+- Docker writes generated `config.json` into `dist/config/` and symlinks it into `dist/` so compiled code can load it. `CONFIG_*` env vars override config on each container start; Docker forces headless mode and injects accounts via `ACCOUNT_*` env vars.
 
 ## Code Style
 
@@ -96,7 +98,7 @@ When `config.clusters > 1`, the primary process chunks accounts and forks Node `
 
 `src/functions/Workers.ts` filters dashboard/app promotion collections according to completion, lock state, type, and configured worker toggles. It handles promotion groups such as daily set, more promotions, punch cards, special promotions, app promotions, and direct DAPI “other promotions”.
 
-`src/functions/Activities.ts` is the activity dispatcher. API-based handlers include `Quiz`, `UrlReward`, `FindClippy`, and `DoubleSearchPoints`; browser-based handlers include `Search` and `SearchOnBing`; app-based handlers include `DailyCheckIn`, `ReadToEarn`, and `AppReward`.
+`src/functions/Activities.ts` is the activity dispatcher. Handlers live in `src/functions/activities/` split by delivery channel: `api/` (UrlReward, ClaimBonusPoints, EnsureStreakProtection, ClaimReward, ActivateSearchPerk, VisualSearch, and experimental `Search`/`SearchOnBing`), `browser/` (Search, SearchOnBing), and `app/` (DailyCheckIn, ReadToEarn, AppReward). The dispatcher selects browser-vs-API search implementations via `config.experimental.apiSearch` / `apiSearchOnBing`. Quest/punchcard completion is coordinated through `src/browser/ReactFunc.ts` (parsing the React-based Bing quest panel into `ParentQuest` / `QuestChild` shapes) and `src/functions/PunchcardManager.ts`.
 
 ### Search
 
@@ -108,7 +110,7 @@ When `config.clusters > 1`, the primary process chunks accounts and forks Node `
 
 `src/logging/Logger.ts` applies independent console/webhook filters with whitelist/blacklist modes using levels, keywords, and regex patterns. Discord and ntfy senders use `p-queue`; clustered workers forward webhook-relevant logs to the primary process by IPC.
 
-`src/util/Validator.ts` defines Zod schemas for config and account files. Keep `src/interface/*.ts`, the Zod schemas, and `.example.json` files in sync when adding or changing configuration fields.
+`src/util/Validator.ts` defines Zod schemas for config and accounts (schemas also enforce `engines.node`). Keep `src/interface/*.ts`, the Zod schemas, and `config.example.json` / `env.example` in sync when adding or changing configuration fields.
 
 ## Docker
 
