@@ -2,6 +2,9 @@
 [![Latest Build](https://img.shields.io/github/actions/workflow/status/TheNetsky/Microsoft-Rewards-Script/auto-release.yml?branch=v4&style=for-the-badge&label=Latest%20Build)](https://github.com/TheNetsky/Microsoft-Rewards-Script/actions/workflows/auto-release.yml)
 [![Docker](https://img.shields.io/badge/Docker-GHCR-blue?style=for-the-badge&logo=docker)](https://github.com/TheNetsky/Microsoft-Rewards-Script/pkgs/container/microsoft-rewards-script)
 
+> [!NOTE]
+> **语言 / Language:** English (current) | [简体中文](README.zh-CN.md)
+
 > [!TIP]
 > This version supports the **new, modern Bing Rewards dashboard only** - it does **not** support the legacy dashboard.
 > If your account still uses the old dashboard, use the [v3 branch](https://github.com/TheNetsky/Microsoft-Rewards-Script/tree/v3) and v3.x releases instead!
