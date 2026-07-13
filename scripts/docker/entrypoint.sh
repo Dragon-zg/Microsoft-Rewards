@@ -110,9 +110,13 @@ fi
 #
 #    Webhooks:
 #      CONFIG_DISCORD_ENABLED / CONFIG_DISCORD_URL
+#      CONFIG_TELEGRAM_ENABLED / CONFIG_TELEGRAM_BOTTOKEN / CONFIG_TELEGRAM_CHATID
 #      CONFIG_NTFY_ENABLED / CONFIG_NTFY_URL / CONFIG_NTFY_TOPIC / CONFIG_NTFY_TOKEN
 #      CONFIG_NTFY_TITLE / CONFIG_NTFY_PRIORITY
 #      CONFIG_NTFY_TAGS                  → comma-separated e.g. "bot,notify"
+#      CONFIG_WXPUSHER_ENABLED / CONFIG_WXPUSHER_APPTOKEN
+#      CONFIG_WXPUSHER_UIDS              → comma-separated e.g. "UID_xxx,UID_yyy"
+#      CONFIG_WXPUSHER_TOPIC_IDS         → comma-separated e.g. "123,456"
 #
 #    Webhook log filter:
 #      CONFIG_WEBHOOK_LOG_FILTER_ENABLED  → .webhook.webhookLogFilter.enabled
@@ -292,6 +296,19 @@ _cfg "${CONFIG_NTFY_TOKEN:-}"     '.webhook.ntfy.token'     string
 _cfg "${CONFIG_NTFY_TITLE:-}"     '.webhook.ntfy.title'     string
 _cfg "${CONFIG_NTFY_PRIORITY:-}"  '.webhook.ntfy.priority'  number
 _cfg_array "${CONFIG_NTFY_TAGS-__UNSET__}"  '.webhook.ntfy.tags'
+
+# WxPusher webhook
+_cfg "${CONFIG_WXPUSHER_ENABLED:-}"   '.webhook.wxpusher.enabled'   bool
+_cfg "${CONFIG_WXPUSHER_APPTOKEN:-}"  '.webhook.wxpusher.appToken'  string
+_cfg_array "${CONFIG_WXPUSHER_UIDS-__UNSET__}"  '.webhook.wxpusher.uids'
+if [ "${CONFIG_WXPUSHER_TOPIC_IDS-__UNSET__}" != "__UNSET__" ]; then
+  if [ -z "${CONFIG_WXPUSHER_TOPIC_IDS}" ]; then
+    _cfg '[]' '.webhook.wxpusher.topicIds' number
+  else
+    wxpusher_topic_ids=$(echo "$CONFIG_WXPUSHER_TOPIC_IDS" | jq -Rc '[split(",") | .[] | ltrimstr(" ") | rtrimstr(" ") | select(length > 0) | (tonumber? // .)]')
+    _cfg "$wxpusher_topic_ids" '.webhook.wxpusher.topicIds' number
+  fi
+fi
 
 # Webhook log filter
 _cfg "${CONFIG_WEBHOOK_LOG_FILTER_ENABLED:-}"  '.webhook.webhookLogFilter.enabled'  bool

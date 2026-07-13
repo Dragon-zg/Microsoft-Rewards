@@ -28,6 +28,49 @@ const QueryEngineSchema = z.union([
 ])
 
 // Webhook
+const WxPusherUidListSchema = z
+    .array(z.string())
+    .transform(values => values.map(value => value.trim()))
+    .refine(values => values.every(Boolean), {
+        message: 'UID entries must be non-empty strings'
+    })
+
+const WxPusherTopicIdListSchema = z
+    .array(z.union([z.number(), z.string()]))
+    .transform(values => values.map(value => (typeof value === 'number' ? value : Number(value.trim()))))
+    .refine(values => values.every(value => Number.isInteger(value) && value > 0), {
+        message: 'topicIds must be an array of positive integers'
+    })
+
+const WebhookWxPusherSchema = z
+    .object({
+        enabled: z.boolean().optional(),
+        appToken: z.string(),
+        uids: WxPusherUidListSchema.optional(),
+        topicIds: WxPusherTopicIdListSchema.optional()
+    })
+    .superRefine((config, ctx) => {
+        if (!config.enabled) return
+
+        if (!config.appToken.trim()) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['appToken'],
+                message: 'appToken is required when WxPusher is enabled'
+            })
+        }
+
+        const hasUids = Boolean(config.uids?.length)
+        const hasTopicIds = Boolean(config.topicIds?.length)
+        if (!hasUids && !hasTopicIds) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['uids'],
+                message: 'at least one UID or Topic ID is required when WxPusher is enabled'
+            })
+        }
+    })
+
 const WebhookSchema = z.object({
     discord: z
         .object({
@@ -53,6 +96,7 @@ const WebhookSchema = z.object({
             chatId: z.string()
         })
         .optional(),
+    wxpusher: WebhookWxPusherSchema.optional(),
     webhookLogFilter: LogFilterSchema
 })
 
@@ -186,6 +230,12 @@ const defaultConfig: Config = {
         regexPatterns: []
     },
     webhook: {
+        wxpusher: {
+            enabled: false,
+            appToken: '',
+            uids: [],
+            topicIds: []
+        },
         webhookLogFilter: {
             enabled: false,
             mode: 'whitelist',

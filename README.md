@@ -287,6 +287,10 @@ Opt-in features that may change. Disabled by default.
 | `webhook.ntfy.title`                     | string   | `"Microsoft-Rewards-Script"`                         | Notification title                | `CONFIG_NTFY_TITLE`                     |
 | `webhook.ntfy.tags`                      | string[] | `["bot", "notify"]`                                  | Notification tags                 | `CONFIG_NTFY_TAGS` \*                   |
 | `webhook.ntfy.priority`                  | number   | `3`                                                  | Notification priority (1-5)       | `CONFIG_NTFY_PRIORITY`                  |
+| `webhook.wxpusher.enabled`               | boolean  | `false`                                              | Enable WxPusher standard push     | `CONFIG_WXPUSHER_ENABLED`               |
+| `webhook.wxpusher.appToken`              | string   | `""`                                                 | WxPusher appToken                 | `CONFIG_WXPUSHER_APPTOKEN`              |
+| `webhook.wxpusher.uids`                  | string[] | `[]`                                                 | Target UID list                   | `CONFIG_WXPUSHER_UIDS` \*               |
+| `webhook.wxpusher.topicIds`              | number[] | `[]`                                                 | Target topic ID list              | `CONFIG_WXPUSHER_TOPIC_IDS` \*          |
 | `webhook.webhookLogFilter.enabled`       | boolean  | `false`                                              | Enable webhook log filtering      | `CONFIG_WEBHOOK_LOG_FILTER_ENABLED`     |
 | `webhook.webhookLogFilter.mode`          | string   | `"whitelist"`                                        | Filter mode (whitelist/blacklist) | `CONFIG_WEBHOOK_LOG_FILTER_MODE`        |
 | `webhook.webhookLogFilter.levels`        | string[] | `["error"]`                                          | Log levels to send                | `CONFIG_WEBHOOK_LOG_FILTER_LEVELS` \*   |
@@ -295,6 +299,10 @@ Opt-in features that may change. Disabled by default.
 
 > [!NOTE]
 > \* Docker `CONFIG_*` array values are comma-separated strings e.g. `"error,warn"`. Regex patterns must be set directly in `config.json`.
+
+> [!TIP]
+> **WxPusher** uses the standard push API and only sends key summary cards (`ACCOUNT-END`, `ACCOUNT-ERROR`, `RUN-END`, and fatal process errors).
+> The HTML receipt messages do **not** use `webhookLogFilter`; configure `webhook.wxpusher.uids` and/or `webhook.wxpusher.topicIds` directly.
 
 > [!WARNING]
 > **NTFY** users set the `webhookLogFilter` to `enabled`, or you will receive push notifications for _all_ logs.

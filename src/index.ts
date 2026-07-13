@@ -24,10 +24,13 @@ import { SearchManager } from './functions/SearchManager'
 import { PunchcardManager } from './functions/PunchcardManager'
 
 import type { Account } from './interface/Account'
+import type { AccountStats } from './interface/AccountStats'
 import HttpClient from './util/Http'
 import { sendDiscord, flushDiscordQueue } from './logging/Discord'
 import { sendNtfy, flushNtfyQueue } from './logging/Ntfy'
 import { sendTelegram, flushTelegramQueue } from './logging/Telegram'
+import { flushWxPusherQueue, sendWxPusher } from './logging/WxPusher'
+import type { WxPusherEvent, WxPusherRunEndEvent } from './logging/WxPusher'
 import type { DashboardData } from './interface/DashboardData'
 import type { AppDashboardData } from './interface/AppDashBoardData'
 
@@ -41,17 +44,13 @@ interface BrowserSession {
     fingerprint: BrowserFingerprintWithHeaders
 }
 
-interface AccountStats {
-    email: string
-    initialPoints: number
-    finalPoints: number
-    collectedPoints: number
-    duration: number
-    success: boolean
-    error?: string
-}
-
 const executionContext = new AsyncLocalStorage<ExecutionContext>()
+
+interface WorkerMessage {
+    __ipcLog?: IpcLog
+    __stats?: AccountStats[]
+    __wxpusherEvent?: WxPusherEvent
+}
 
 export function getCurrentContext(): ExecutionContext {
     const context = executionContext.getStore()
@@ -62,12 +61,54 @@ export function getCurrentContext(): ExecutionContext {
 }
 
 async function flushAllWebhooks(timeoutMs = 5000): Promise<void> {
-        await Promise.allSettled([
-        flushDiscordQueue(timeoutMs), 
+    await Promise.allSettled([
+        flushDiscordQueue(timeoutMs),
         flushNtfyQueue(timeoutMs),
-        flushTelegramQueue(timeoutMs)
+        flushTelegramQueue(timeoutMs),
+        flushWxPusherQueue(timeoutMs)
     ])
     closeSessionStore()
+}
+
+function buildRunEndEvent(accountStats: AccountStats[], runStartTime: number): WxPusherRunEndEvent {
+    const successCount = accountStats.filter(stat => stat.success).length
+    const failureCount = accountStats.length - successCount
+    const totalCollectedPoints = accountStats.reduce((sum, stat) => sum + stat.collectedPoints, 0)
+    const totalInitialPoints = accountStats.reduce((sum, stat) => sum + stat.initialPoints, 0)
+    const totalFinalPoints = accountStats.reduce((sum, stat) => sum + stat.finalPoints, 0)
+    const totalDurationMinutes = ((Date.now() - runStartTime) / 1000 / 60).toFixed(1)
+
+    return {
+        type: 'run-end',
+        totalAccounts: accountStats.length,
+        successCount,
+        failureCount,
+        totalCollectedPoints,
+        totalInitialPoints,
+        totalFinalPoints,
+        totalDurationMinutes,
+        accountStats
+    }
+}
+
+function emitWxPusherEvent(config: MicrosoftRewardsBot['config'], event: WxPusherEvent): void {
+    if (!config.webhook.wxpusher?.enabled) return
+
+    if (cluster.isPrimary) {
+        void sendWxPusher(config.webhook.wxpusher, event)
+        return
+    }
+
+    process.send?.({ __wxpusherEvent: event } satisfies WorkerMessage)
+}
+
+function emitFatalWxPusher(bot: MicrosoftRewardsBot, title: string, error: string | Error): void {
+    const message = error instanceof Error ? `${error.message}\n${error.stack || ''}` : String(error)
+    emitWxPusherEvent(bot.config, {
+        type: 'fatal-error',
+        title,
+        error: message
+    })
 }
 
 interface UserData {
@@ -206,9 +247,13 @@ export class MicrosoftRewardsBot {
             const worker = cluster.fork()
             worker.send?.({ chunk, runStartTime })
 
-            worker.on('message', (msg: { __ipcLog?: IpcLog; __stats?: AccountStats[] }) => {
+            worker.on('message', (msg: WorkerMessage) => {
                 if (msg.__stats) {
                     allAccountStats.push(...msg.__stats)
+                }
+
+                if (msg.__wxpusherEvent) {
+                    void emitWxPusherEvent(this.config, msg.__wxpusherEvent)
                 }
 
                 const log = msg.__ipcLog
@@ -256,17 +301,16 @@ export class MicrosoftRewardsBot {
             )
 
             if (this.activeWorkers <= 0) {
-                const totalCollectedPoints = allAccountStats.reduce((sum, s) => sum + s.collectedPoints, 0)
-                const totalInitialPoints = allAccountStats.reduce((sum, s) => sum + s.initialPoints, 0)
-                const totalFinalPoints = allAccountStats.reduce((sum, s) => sum + s.finalPoints, 0)
-                const totalDurationMinutes = ((Date.now() - runStartTime) / 1000 / 60).toFixed(1)
+                const runEndEvent = buildRunEndEvent(allAccountStats, runStartTime)
 
                 this.logger.info(
                     'main',
                     'RUN-END',
-                    `Completed all accounts | Accounts processed: ${allAccountStats.length} | Total points collected: +${totalCollectedPoints} | Old total: ${totalInitialPoints} → New total: ${totalFinalPoints} | Total runtime: ${totalDurationMinutes}min`,
+                    `Completed all accounts | Accounts processed: ${runEndEvent.totalAccounts} | Total points collected: +${runEndEvent.totalCollectedPoints} | Old total: ${runEndEvent.totalInitialPoints} → New total: ${runEndEvent.totalFinalPoints} | Total runtime: ${runEndEvent.totalDurationMinutes}min`,
                     'green'
                 )
+
+                emitWxPusherEvent(this.config, runEndEvent)
 
                 await flushAllWebhooks()
 
@@ -310,6 +354,8 @@ export class MicrosoftRewardsBot {
                     `Worker task crash: ${error instanceof Error ? error.message : String(error)}`
                 )
 
+                emitFatalWxPusher(this, 'CLUSTER-WORKER-ERROR', error as Error)
+
                 await flushAllWebhooks()
                 process.exit(1)
             }
@@ -334,14 +380,16 @@ export class MicrosoftRewardsBot {
                 )
 
                 this.http = new HttpClient(account.proxy)
+                let resultError: string | undefined
 
                 const result: { initialPoints: number; collectedPoints: number } | undefined = await this.Main(
                     account
                 ).catch(error => {
+                    resultError = error instanceof Error ? error.message : String(error)
                     void this.logger.error(
                         true,
                         'FLOW',
-                        `Mobile flow failed for ${accountEmail}: ${error instanceof Error ? error.message : String(error)}`
+                        `Mobile flow failed for ${accountEmail}: ${resultError}`
                     )
                     return undefined
                 })
@@ -368,15 +416,32 @@ export class MicrosoftRewardsBot {
                         `Completed account: ${accountEmail} | Total: +${collectedPoints} | Old: ${accountInitialPoints} → New: ${accountFinalPoints} | Duration: ${durationSeconds}s`,
                         'green'
                     )
+
+                    emitWxPusherEvent(this.config, {
+                        type: 'account-end',
+                        email: accountEmail,
+                        initialPoints: accountInitialPoints,
+                        finalPoints: accountFinalPoints,
+                        collectedPoints,
+                        duration: parseFloat(durationSeconds)
+                    })
                 } else {
-                    accountStats.push({
+                    const failedStat: AccountStats = {
                         email: accountEmail,
                         initialPoints: 0,
                         finalPoints: 0,
                         collectedPoints: 0,
                         duration: parseFloat(durationSeconds),
                         success: false,
-                        error: 'Flow failed'
+                        error: resultError || 'Flow failed'
+                    }
+                    accountStats.push(failedStat)
+
+                    emitWxPusherEvent(this.config, {
+                        type: 'account-error',
+                        email: accountEmail,
+                        duration: failedStat.duration,
+                        error: failedStat.error || 'Flow failed'
                     })
                 }
             } catch (error) {
@@ -387,7 +452,7 @@ export class MicrosoftRewardsBot {
                     `${accountEmail}: ${error instanceof Error ? error.message : String(error)}`
                 )
 
-                accountStats.push({
+                const failedStat: AccountStats = {
                     email: accountEmail,
                     initialPoints: 0,
                     finalPoints: 0,
@@ -395,22 +460,29 @@ export class MicrosoftRewardsBot {
                     duration: parseFloat(durationSeconds),
                     success: false,
                     error: error instanceof Error ? error.message : String(error)
+                }
+                accountStats.push(failedStat)
+
+                emitWxPusherEvent(this.config, {
+                    type: 'account-error',
+                    email: accountEmail,
+                    duration: failedStat.duration,
+                    error: failedStat.error || 'Flow failed'
                 })
             }
         }
 
         if (this.config.clusters <= 1 && cluster.isPrimary) {
-            const totalCollectedPoints = accountStats.reduce((sum, s) => sum + s.collectedPoints, 0)
-            const totalInitialPoints = accountStats.reduce((sum, s) => sum + s.initialPoints, 0)
-            const totalFinalPoints = accountStats.reduce((sum, s) => sum + s.finalPoints, 0)
-            const totalDurationMinutes = ((Date.now() - runStartTime) / 1000 / 60).toFixed(1)
+            const runEndEvent = buildRunEndEvent(accountStats, runStartTime)
 
             this.logger.info(
                 'main',
                 'RUN-END',
-                `Completed all accounts | Accounts processed: ${accountStats.length} | Total points collected: +${totalCollectedPoints} | Old total: ${totalInitialPoints} → New total: ${totalFinalPoints} | Total runtime: ${totalDurationMinutes}min`,
+                `Completed all accounts | Accounts processed: ${runEndEvent.totalAccounts} | Total points collected: +${runEndEvent.totalCollectedPoints} | Old total: ${runEndEvent.totalInitialPoints} → New total: ${runEndEvent.totalFinalPoints} | Total runtime: ${runEndEvent.totalDurationMinutes}min`,
                 'green'
             )
+
+            emitWxPusherEvent(this.config, runEndEvent)
 
             await flushAllWebhooks()
             process.exit(0)
@@ -717,6 +789,7 @@ async function main(): Promise<void> {
             return
         }
         rewardsBot.logger.error('main', 'UNCAUGHT-EXCEPTION', error)
+        emitFatalWxPusher(rewardsBot, 'UNCAUGHT-EXCEPTION', error)
         await flushAllWebhooks()
         process.exit(1)
     })
@@ -730,6 +803,7 @@ async function main(): Promise<void> {
             return
         }
         rewardsBot.logger.error('main', 'UNHANDLED-REJECTION', reason as Error)
+        emitFatalWxPusher(rewardsBot, 'UNHANDLED-REJECTION', reason as Error)
         await flushAllWebhooks()
         process.exit(1)
     })
@@ -739,12 +813,21 @@ async function main(): Promise<void> {
         await rewardsBot.run()
     } catch (error) {
         rewardsBot.logger.error('main', 'MAIN-ERROR', error as Error)
+        emitFatalWxPusher(rewardsBot, 'MAIN-ERROR', error as Error)
+        await flushAllWebhooks()
+        process.exit(1)
     }
 }
 
 main().catch(async error => {
-    const tmpBot = new MicrosoftRewardsBot()
-    tmpBot.logger.error('main', 'MAIN-ERROR', error as Error)
+    let tmpBot: MicrosoftRewardsBot | undefined
+    try {
+        tmpBot = new MicrosoftRewardsBot()
+        tmpBot.logger.error('main', 'MAIN-ERROR', error as Error)
+        emitFatalWxPusher(tmpBot, 'MAIN-ERROR', error as Error)
+    } catch {
+        console.error(error)
+    }
     await flushAllWebhooks()
     process.exit(1)
 })

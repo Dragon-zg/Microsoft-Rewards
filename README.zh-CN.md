@@ -280,6 +280,10 @@ RSS 订阅源使用点分路径 —— `rss` 表示全部订阅源，`rss.<站�
 | `webhook.ntfy.title`                     | string   | `"Microsoft-Rewards-Script"`                         | 通知标题                      | `CONFIG_NTFY_TITLE`                       |
 | `webhook.ntfy.tags`                      | string[] | `["bot", "notify"]`                                 | 通知标签                      | `CONFIG_NTFY_TAGS` \*                     |
 | `webhook.ntfy.priority`                  | number   | `3`                                                 | 通知优先级（1-5）             | `CONFIG_NTFY_PRIORITY`                    |
+| `webhook.wxpusher.enabled`               | boolean  | `false`                                             | 启用 WxPusher 标准推送        | `CONFIG_WXPUSHER_ENABLED`                 |
+| `webhook.wxpusher.appToken`              | string   | `""`                                                | WxPusher appToken             | `CONFIG_WXPUSHER_APPTOKEN`                |
+| `webhook.wxpusher.uids`                  | string[] | `[]`                                                | 接收目标 UID 列表             | `CONFIG_WXPUSHER_UIDS` \*                 |
+| `webhook.wxpusher.topicIds`              | number[] | `[]`                                                | 接收目标 Topic ID 列表        | `CONFIG_WXPUSHER_TOPIC_IDS` \*            |
 | `webhook.webhookLogFilter.enabled`       | boolean  | `false`                                             | 启用 webhook 日志过滤         | `CONFIG_WEBHOOK_LOG_FILTER_ENABLED`       |
 | `webhook.webhookLogFilter.mode`          | string   | `"whitelist"`                                       | 过滤模式（白名单/黑名单）     | `CONFIG_WEBHOOK_LOG_FILTER_MODE`          |
 | `webhook.webhookLogFilter.levels`        | string[] | `["error"]`                                         | 要发送的日志级别              | `CONFIG_WEBHOOK_LOG_FILTER_LEVELS` \*    |
@@ -288,6 +292,10 @@ RSS 订阅源使用点分路径 —— `rss` 表示全部订阅源，`rss.<站�
 
 > [!NOTE]
 > \* Docker 中 `CONFIG_*` 的数组值用逗号分隔，例如 `"error,warn"`。正则表达式必须在 `config.json` 中直接设置。
+
+> [!TIP]
+> **WxPusher** 走标准推送接口，只发送关键汇总卡片（`ACCOUNT-END`、`ACCOUNT-ERROR`、`RUN-END` 和进程级致命错误）。
+> 这些 HTML 回执**不会**经过 `webhookLogFilter`；请直接配置 `webhook.wxpusher.uids` 和/或 `webhook.wxpusher.topicIds`。
 
 > [!WARNING]
 > 使用 **NTFY** 的用户请把 `webhookLogFilter` 设为 `enabled`，否则你会收到_所有_日志的推送通知。

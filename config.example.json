@@ -97,6 +97,12 @@
             ],
             "priority": 3
         },
+        "wxpusher": {
+            "enabled": false,
+            "appToken": "",
+            "uids": [],
+            "topicIds": []
+        },
         "webhookLogFilter": {
             "enabled": false,
             "mode": "whitelist",
