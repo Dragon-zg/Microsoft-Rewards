@@ -16,7 +16,7 @@ fi
 unset _SKIP_SLEEP_OVERRIDE
 
 export PLAYWRIGHT_BROWSERS_PATH=0
-export TZ="${TZ:-UTC}"
+export TZ="${TZ:-Asia/Shanghai}"
 
 cd /usr/src/microsoft-rewards-script
 

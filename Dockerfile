@@ -31,7 +31,7 @@ WORKDIR /usr/src/microsoft-rewards-script
 
 # Set production environment variables
 ENV NODE_ENV=production \
-    TZ=UTC \
+    TZ=Asia/Shanghai \
     PLAYWRIGHT_BROWSERS_PATH=0 \
     FORCE_HEADLESS=1 \
     NODE_OPTIONS=--disable-warning=ExperimentalWarning

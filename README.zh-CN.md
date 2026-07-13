@@ -90,7 +90,7 @@ npm run start
 
 ## Docker
 
-- 复制示例文件 [`compose.yaml`](compose.yaml)
+- 复制示例文件 [`compose.yaml`](compose.yaml)，默认使用 `ghcr.io/dragon-zg/microsoft-rewards:4` 镜像。
 - 复制 [`env.example`](env.example) 并重命名为 `.env`，填入你的账号信息：
 
 ```env
@@ -98,6 +98,7 @@ ACCOUNT_1_EMAIL=email@example.com
 ACCOUNT_1_PASSWORD=your_password
 ```
 
+- 默认时区为 `Asia/Shanghai`（中国标准时间）；如需覆盖，可在 `compose.yaml` 中设置 `TZ`。
 - 检查 `compose.yaml`，按需调整定时任务、时区和配置项。
 
 > [!NOTE]

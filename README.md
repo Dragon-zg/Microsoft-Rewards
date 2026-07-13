@@ -1,6 +1,6 @@
 [![Discord](https://img.shields.io/badge/Join%20Our%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/8BxYbV4pkj)
 [![Latest Build](https://img.shields.io/github/actions/workflow/status/TheNetsky/Microsoft-Rewards-Script/auto-release.yml?branch=v4&style=for-the-badge&label=Latest%20Build)](https://github.com/TheNetsky/Microsoft-Rewards-Script/actions/workflows/auto-release.yml)
-[![Docker](https://img.shields.io/badge/Docker-GHCR-blue?style=for-the-badge&logo=docker)](https://github.com/TheNetsky/Microsoft-Rewards-Script/pkgs/container/microsoft-rewards-script)
+[![Docker](https://img.shields.io/badge/Docker-GHCR-blue?style=for-the-badge&logo=docker)](https://github.com/Dragon-zg/Microsoft-Rewards/pkgs/container/microsoft-rewards)
 
 > [!NOTE]
 > **语言 / Language:** English (current) | [简体中文](README.zh-CN.md)
@@ -94,7 +94,7 @@ npm run start
 
 ## Docker
 
-- Copy the sample [`compose.yaml`](compose.yaml)
+- Copy the sample [`compose.yaml`](compose.yaml). It uses `ghcr.io/dragon-zg/microsoft-rewards:4` by default.
 - Copy and rename [`env.example`](env.example) to `.env` and add your account credentials:
 
 ```env
@@ -102,6 +102,7 @@ ACCOUNT_1_EMAIL=email@example.com
 ACCOUNT_1_PASSWORD=your_password
 ```
 
+- The default timezone is `Asia/Shanghai` (China Standard Time). Set `TZ` in `compose.yaml` to override it.
 - Review `compose.yaml` to adjust scheduling, timezone, and config options.
 
 > [!NOTE]

@@ -6,8 +6,8 @@ export PLAYWRIGHT_BROWSERS_PATH=0
 
 SCRIPT_DIR="/usr/src/microsoft-rewards-script"
 
-# 1. Timezone: default to UTC if not provided
-: "${TZ:=UTC}"
+# 1. Timezone: default to China Standard Time if not provided
+: "${TZ:=Asia/Shanghai}"
 ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime
 echo "$TZ" > /etc/timezone
 dpkg-reconfigure -f noninteractive tzdata

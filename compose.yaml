@@ -1,6 +1,6 @@
 services:
     microsoft-rewards-script:
-        image: ghcr.io/thenetsky/microsoft-rewards-script:4
+        image: ghcr.io/dragon-zg/microsoft-rewards:4
         # To build locally instead of pulling the prebuilt image, use the build section below.
         #build:
         #    context: .
@@ -14,9 +14,9 @@ services:
             - path: .env
         environment:
             # Scheduling
-            TZ: 'America/Toronto'
+            TZ: 'Asia/Shanghai'
             NODE_ENV: 'production'
-            CRON_SCHEDULE: '0 7 * * *' # use crontab.guru to customize your schedule
+            CRON_SCHEDULE: '28 8 * * *' # use crontab.guru to customize your schedule
             RUN_ON_START: 'true' # run script immediately on container start
             SKIP_RANDOM_SLEEP: 'false'
             #MIN_SLEEP_MINUTES: "5"
