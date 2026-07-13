@@ -101,6 +101,8 @@ fi
 #
 #    Proxy:
 #      CONFIG_PROXY_QUERY_ENGINE         → .proxy.queryEngine
+#      CONFIG_PROXY_VERSION_CHECK_ENABLED → .proxy.versionCheck.enabled
+#      CONFIG_PROXY_VERSION_CHECK_URL    → .proxy.versionCheck.url
 #
 #    Console log filter:
 #      CONFIG_LOG_FILTER_ENABLED         → .consoleLogFilter.enabled
@@ -270,7 +272,9 @@ _cfg "${CONFIG_EXPERIMENTAL_API_SEARCH:-}"         '.experimental.apiSearch'    
 _cfg "${CONFIG_EXPERIMENTAL_API_SEARCH_ON_BING:-}" '.experimental.apiSearchOnBing'   bool
 
 # Proxy
-_cfg "${CONFIG_PROXY_QUERY_ENGINE:-}"  '.proxy.queryEngine'  bool
+_cfg "${CONFIG_PROXY_QUERY_ENGINE:-}"            '.proxy.queryEngine'             bool
+_cfg "${CONFIG_PROXY_VERSION_CHECK_ENABLED:-}"   '.proxy.versionCheck.enabled'    bool
+_cfg "${CONFIG_PROXY_VERSION_CHECK_URL:-}"       '.proxy.versionCheck.url'        string
 
 # Console log filter
 # Levels and keywords accept comma-separated values e.g. "error,warn"

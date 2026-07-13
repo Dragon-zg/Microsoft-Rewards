@@ -49,6 +49,12 @@ export interface ConfigExperimental {
 
 export interface ConfigProxy {
     queryEngine: boolean
+    versionCheck: ConfigVersionCheckProxy
+}
+
+export interface ConfigVersionCheckProxy {
+    enabled: boolean
+    url: string
 }
 
 export interface ConfigWorkers {

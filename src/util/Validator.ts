@@ -150,7 +150,13 @@ export const ConfigSchema = z.object({
         .default({ apiSearch: false, apiSearchOnBing: false }),
     debugLogs: z.boolean(),
     proxy: z.object({
-        queryEngine: z.boolean()
+        queryEngine: z.boolean(),
+        versionCheck: z
+            .object({
+                enabled: z.boolean().default(false),
+                url: z.string().default('')
+            })
+            .default({ enabled: false, url: '' })
     }),
     consoleLogFilter: LogFilterSchema,
     webhook: WebhookSchema
@@ -221,7 +227,13 @@ const defaultConfig: Config = {
         apiSearchOnBing: false
     },
     debugLogs: false,
-    proxy: { queryEngine: true },
+    proxy: {
+        queryEngine: true,
+        versionCheck: {
+            enabled: false,
+            url: ''
+        }
+    },
     consoleLogFilter: {
         enabled: false,
         mode: 'whitelist',
@@ -293,7 +305,7 @@ function fillMissing(data: unknown, defaults: unknown, path = ''): unknown {
 export function validateConfig(data: unknown): Config {
     const filled = fillMissing(data, defaultConfig)
     let result = ConfigSchema.safeParse(filled)
-    if (result.success) return result.data as Config
+    if (result.success) return normalizeConfig(result.data as Config)
 
     let patched: unknown = filled
     for (const issue of result.error.issues) {
@@ -308,7 +320,25 @@ export function validateConfig(data: unknown): Config {
         console.error('[Config] still invalid after applying defaults:', result.error.issues)
         throw new Error('Config validation failed')
     }
-    return result.data as Config
+    return normalizeConfig(result.data as Config)
+}
+
+function normalizeConfig(config: Config): Config {
+    if (config.proxy.versionCheck.enabled && !config.proxy.versionCheck.url.trim()) {
+        console.warn('[Config] "proxy.versionCheck.url" is empty while enabled; disabling version check proxy')
+        return {
+            ...config,
+            proxy: {
+                ...config.proxy,
+                versionCheck: {
+                    enabled: false,
+                    url: ''
+                }
+            }
+        }
+    }
+
+    return config
 }
 
 export function validateAccounts(data: unknown): Account[] {

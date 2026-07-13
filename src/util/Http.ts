@@ -12,6 +12,8 @@ export interface HttpRequestConfig {
     params?: Record<string, string> | URLSearchParams
     data?: unknown
     timeout?: number
+    proxyUrl?: string
+    retries?: number
     responseType?: 'json' | 'text'
 }
 
@@ -201,12 +203,18 @@ class HttpClient {
     }
 }
 
-let sharedInstance: Impit | undefined
+const sharedInstances = new Map<string, Impit>()
 
 export async function httpRequest<T = unknown>(config: HttpRequestConfig): Promise<HttpResponse<T>> {
-    if (!sharedInstance) sharedInstance = new Impit({ browser: 'chrome', timeout: DEFAULT_TIMEOUT })
+    const proxyUrl = config.proxyUrl?.trim()
+    const key = proxyUrl || '<direct>'
+    let sharedInstance = sharedInstances.get(key)
+    if (!sharedInstance) {
+        sharedInstance = new Impit({ browser: 'chrome', ...(proxyUrl ? { proxyUrl } : {}), timeout: DEFAULT_TIMEOUT })
+        sharedInstances.set(key, sharedInstance)
+    }
     const { url, init } = toInit(config)
-    return send<T>(sharedInstance, url, init, config, 0)
+    return send<T>(sharedInstance, url, init, config, config.retries ?? 0)
 }
 
 export default HttpClient

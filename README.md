@@ -279,9 +279,11 @@ Opt-in features that may change. Disabled by default.
 
 ### Proxy
 
-| Setting             | Type    | Default | Description                 | Docker environment variable |
-| ------------------- | ------- | ------- | --------------------------- | --------------------------- |
-| `proxy.queryEngine` | boolean | `true`  | Proxy query engine requests | `CONFIG_PROXY_QUERY_ENGINE` |
+| Setting                      | Type    | Default | Description                                      | Docker environment variable          |
+| ---------------------------- | ------- | ------- | ------------------------------------------------ | ------------------------------------ |
+| `proxy.queryEngine`          | boolean | `true`  | Proxy query engine requests                      | `CONFIG_PROXY_QUERY_ENGINE`          |
+| `proxy.versionCheck.enabled` | boolean | `false` | Proxy Chrome/Edge version check requests         | `CONFIG_PROXY_VERSION_CHECK_ENABLED` |
+| `proxy.versionCheck.url`     | string  | `""`    | Proxy URL for Chrome/Edge version check requests | `CONFIG_PROXY_VERSION_CHECK_URL`     |
 
 ### Webhooks
 

@@ -275,9 +275,11 @@ GMYA 为可选来源：把 `gmya` 加到 `searchSettings.queryEngines`，或包�
 
 ### 代理
 
-| 设置项             | 类型    | 默认值 | 说明                 | Docker 环境变量                |
-| ------------------ | ------- | ------ | -------------------- | ----------------------------- |
-| `proxy.queryEngine` | boolean | `true` | 搜索词引擎请求走代理 | `CONFIG_PROXY_QUERY_ENGINE` |
+| 设置项                       | 类型    | 默认值  | 说明                             | Docker 环境变量                      |
+| ---------------------------- | ------- | ------- | -------------------------------- | ------------------------------------ |
+| `proxy.queryEngine`          | boolean | `true`  | 搜索词引擎请求走代理             | `CONFIG_PROXY_QUERY_ENGINE`          |
+| `proxy.versionCheck.enabled` | boolean | `false` | Chrome/Edge 版本请求走专用代理   | `CONFIG_PROXY_VERSION_CHECK_ENABLED` |
+| `proxy.versionCheck.url`     | string  | `""`    | Chrome/Edge 版本请求专用代理地址 | `CONFIG_PROXY_VERSION_CHECK_URL`     |
 
 ### Webhook（推送通知）
 

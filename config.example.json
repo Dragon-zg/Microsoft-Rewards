@@ -64,7 +64,11 @@
         "regexPatterns": []
     },
     "proxy": {
-        "queryEngine": true
+        "queryEngine": true,
+        "versionCheck": {
+            "enabled": false,
+            "url": ""
+        }
     },
     "webhook": {
         "discord": {

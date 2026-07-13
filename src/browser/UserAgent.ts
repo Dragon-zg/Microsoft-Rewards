@@ -1,9 +1,23 @@
+import fs from 'fs'
+import path from 'path'
+
 import { URLs } from '../constants/urls'
 import { httpRequest } from '../util/Http'
 import type { BrowserFingerprintWithHeaders } from 'fingerprint-generator'
 
 import type { ChromeVersion, EdgeVersion } from '../interface/UserAgentUtil'
 import type { MicrosoftRewardsBot } from '../index'
+
+interface EdgeVersions {
+    android?: string
+    windows?: string
+}
+
+interface UserAgentVersionCache {
+    chromeVersion?: string
+    edgeVersions?: EdgeVersions
+    updatedAt?: string
+}
 
 export class UserAgentManager {
     private static readonly NOT_A_BRAND_VERSION = '99'
@@ -87,6 +101,87 @@ export class UserAgentManager {
 
     constructor(private bot: MicrosoftRewardsBot) {}
 
+    private getVersionCachePath(): string {
+        return path.join(path.resolve(process.cwd(), this.bot.config.sessionPath), 'user-agent-version-cache.json')
+    }
+
+    private readVersionCache(isMobile: boolean): UserAgentVersionCache | null {
+        const cachePath = this.getVersionCachePath()
+        if (!fs.existsSync(cachePath)) return null
+
+        try {
+            const parsed = JSON.parse(fs.readFileSync(cachePath, 'utf-8')) as UserAgentVersionCache
+            if (!parsed || typeof parsed !== 'object') return null
+            return parsed
+        } catch (error) {
+            this.bot.logger.warn(
+                isMobile,
+                'USERAGENT-VERSION-CACHE',
+                `Ignoring invalid cache: ${error instanceof Error ? error.message : String(error)}`
+            )
+            return null
+        }
+    }
+
+    private writeVersionCache(update: Partial<UserAgentVersionCache>): void {
+        const cachePath = this.getVersionCachePath()
+        const current = this.readVersionCache(this.bot.isMobile) ?? {}
+        const next: UserAgentVersionCache = {
+            ...current,
+            ...update,
+            edgeVersions: {
+                ...current.edgeVersions,
+                ...update.edgeVersions
+            },
+            updatedAt: new Date().toISOString()
+        }
+
+        fs.mkdirSync(path.dirname(cachePath), { recursive: true })
+        fs.writeFileSync(cachePath, `${JSON.stringify(next, null, 2)}\n`)
+    }
+
+    private getVersionCheckProxyUrl(): string | undefined {
+        const versionCheck = this.bot.config.proxy.versionCheck
+        if (!versionCheck.enabled) return undefined
+
+        const proxyUrl = versionCheck.url.trim()
+        return proxyUrl.length ? proxyUrl : undefined
+    }
+
+    private async requestChromeVersion(proxyUrl?: string): Promise<string> {
+        const request = {
+            url: URLs.userAgent.chromeVersions,
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            ...(proxyUrl ? { proxyUrl, retries: 3 } : {})
+        }
+
+        const response = await httpRequest<ChromeVersion>(request)
+        const data: ChromeVersion = response.data
+        return data.channels.Stable.version
+    }
+
+    private async requestEdgeVersions(proxyUrl?: string): Promise<EdgeVersions> {
+        const request = {
+            url: URLs.edge.products,
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            ...(proxyUrl ? { proxyUrl, retries: 3 } : {})
+        }
+
+        const response = await httpRequest<EdgeVersion[]>(request)
+        const data: EdgeVersion[] = response.data
+        const stable = data.find(x => x.Product == 'Stable') as EdgeVersion
+        return {
+            android: stable.Releases.find(x => x.Platform == 'Android')?.ProductVersion,
+            windows: stable.Releases.find(x => x.Platform == 'Windows' && x.Architecture == 'x64')?.ProductVersion
+        }
+    }
+
     private static pickMobileModel(): string {
         const pool = UserAgentManager.MOBILE_MODELS
         return pool[Math.floor(Math.random() * pool.length)] ?? 'Pixel 8'
@@ -132,50 +227,99 @@ export class UserAgentManager {
     }
 
     async getChromeVersion(isMobile: boolean): Promise<string> {
+        const proxyUrl = this.getVersionCheckProxyUrl()
+
         try {
-            const request = {
-                url: URLs.userAgent.chromeVersions,
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
+            const chromeVersion = await this.requestChromeVersion(proxyUrl)
+            this.writeVersionCache({ chromeVersion })
+            return chromeVersion
+        } catch (error) {
+            this.bot.logger.warn(
+                isMobile,
+                'USERAGENT-CHROME-VERSION',
+                `${proxyUrl ? 'Proxy request' : 'Direct request'} failed: ${error instanceof Error ? error.message : String(error)}`
+            )
+
+            const cached = this.readVersionCache(isMobile)?.chromeVersion
+            if (cached) {
+                this.bot.logger.warn(isMobile, 'USERAGENT-CHROME-VERSION', `Using cached Chrome version: ${cached}`)
+                return cached
+            }
+
+            if (proxyUrl) {
+                try {
+                    const chromeVersion = await this.requestChromeVersion()
+                    this.writeVersionCache({ chromeVersion })
+                    this.bot.logger.warn(
+                        isMobile,
+                        'USERAGENT-CHROME-VERSION',
+                        `Proxy failed and cache unavailable; direct request succeeded: ${chromeVersion}`
+                    )
+                    return chromeVersion
+                } catch (directError) {
+                    this.bot.logger.error(
+                        isMobile,
+                        'USERAGENT-CHROME-VERSION',
+                        `Proxy failed, cache unavailable, and direct request failed: ${directError instanceof Error ? directError.message : String(directError)}`
+                    )
+                    throw directError
                 }
             }
 
-            const response = await httpRequest<ChromeVersion>(request)
-            const data: ChromeVersion = response.data
-            return data.channels.Stable.version
-        } catch (error) {
             this.bot.logger.error(
                 isMobile,
                 'USERAGENT-CHROME-VERSION',
-                `An error occurred: ${error instanceof Error ? error.message : String(error)}`
+                `Direct request failed and cache unavailable: ${error instanceof Error ? error.message : String(error)}`
             )
             throw error
         }
     }
 
-    async getEdgeVersions(isMobile: boolean) {
+    async getEdgeVersions(isMobile: boolean): Promise<EdgeVersions> {
+        const proxyUrl = this.getVersionCheckProxyUrl()
+
         try {
-            const request = {
-                url: URLs.edge.products,
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
+            const edgeVersions = await this.requestEdgeVersions(proxyUrl)
+            this.writeVersionCache({ edgeVersions })
+            return edgeVersions
+        } catch (error) {
+            this.bot.logger.warn(
+                isMobile,
+                'USERAGENT-EDGE-VERSION',
+                `${proxyUrl ? 'Proxy request' : 'Direct request'} failed: ${error instanceof Error ? error.message : String(error)}`
+            )
+
+            const cached = this.readVersionCache(isMobile)?.edgeVersions
+            const cachedVersion = isMobile ? cached?.android : cached?.windows
+            if (cached && cachedVersion) {
+                this.bot.logger.warn(isMobile, 'USERAGENT-EDGE-VERSION', 'Using cached Edge versions')
+                return cached
+            }
+
+            if (proxyUrl) {
+                try {
+                    const edgeVersions = await this.requestEdgeVersions()
+                    this.writeVersionCache({ edgeVersions })
+                    this.bot.logger.warn(
+                        isMobile,
+                        'USERAGENT-EDGE-VERSION',
+                        'Proxy failed and cache unavailable; direct request succeeded'
+                    )
+                    return edgeVersions
+                } catch (directError) {
+                    this.bot.logger.error(
+                        isMobile,
+                        'USERAGENT-EDGE-VERSION',
+                        `Proxy failed, cache unavailable, and direct request failed: ${directError instanceof Error ? directError.message : String(directError)}`
+                    )
+                    throw directError
                 }
             }
 
-            const response = await httpRequest<EdgeVersion[]>(request)
-            const data: EdgeVersion[] = response.data
-            const stable = data.find(x => x.Product == 'Stable') as EdgeVersion
-            return {
-                android: stable.Releases.find(x => x.Platform == 'Android')?.ProductVersion,
-                windows: stable.Releases.find(x => x.Platform == 'Windows' && x.Architecture == 'x64')?.ProductVersion
-            }
-        } catch (error) {
             this.bot.logger.error(
                 isMobile,
                 'USERAGENT-EDGE-VERSION',
-                `An error occurred: ${error instanceof Error ? error.message : String(error)}`
+                `Direct request failed and cache unavailable: ${error instanceof Error ? error.message : String(error)}`
             )
             throw error
         }
