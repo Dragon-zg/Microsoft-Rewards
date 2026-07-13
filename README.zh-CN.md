@@ -202,6 +202,7 @@ ACCOUNT_1_PASSWORD=your_password
 | `hackernews` | Hacker News 首页文章                   |
 | `reddit`     | Reddit r/popular 帖子标题              |
 | `local`      | 内置的 `src/functions/search-queries.json` 词表 |
+| `gmya`       | GMYA 热榜（`ZhiHuHot`、`WeiBoHot`、`TouTiaoHot`、`DouYinHot`、`BaiduHot`） |
 
 RSS 订阅源使用点分路径 —— `rss` 表示全部订阅源，`rss.<站点>` 表示某站点的全部订阅源，`rss.<站点>.<端点>` 表示单个订阅源：
 
@@ -216,6 +217,16 @@ RSS 订阅源使用点分路径 —— `rss` 表示全部订阅源，`rss.<站�
 | `rss.reddit`       | Reddit 订阅源（`popular`、`worldnews`、`technology`）            |
 
 你可以在 `src/constants/rssFeeds.ts` 中添加自己的订阅源。
+
+GMYA 为可选来源：把 `gmya` 加到 `searchSettings.queryEngines`，或包含在 `CONFIG_SEARCH_QUERY_ENGINES` 中（例如 `CONFIG_SEARCH_QUERY_ENGINES=google,gmya,rss.bbc`）。
+
+```json
+[
+    "google",
+    "gmya",
+    "rss.bbc"
+]
+```
 
 默认值：
 

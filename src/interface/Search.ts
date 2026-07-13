@@ -43,6 +43,13 @@ export interface HackerNewsResponse {
     }>
 }
 
+export interface GmyaHotResponse {
+    code?: number | string
+    data?: Array<{
+        title?: unknown
+    }>
+}
+
 export interface WikipediaRandomResponse {
     query?: {
         random?: Array<{

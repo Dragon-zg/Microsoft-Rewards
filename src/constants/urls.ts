@@ -12,6 +12,7 @@ const BING_APIS = 'https://www.bingapis.com'
 const WIKIMEDIA = 'https://wikimedia.org'
 const REDDIT = 'https://www.reddit.com'
 const HACKER_NEWS = 'https://hn.algolia.com'
+const GMYA_API = 'https://api.gmya.net'
 const CHROME_FOR_TESTING = 'https://googlechromelabs.github.io'
 
 // Public Bing API app id, gotten from mitm, but bound to change?
@@ -66,7 +67,8 @@ export const URLs = {
         wikipediaRandom: (langCode: string) =>
             `https://${langCode}.wikipedia.org/w/api.php?action=query&format=json&list=random&rnnamespace=0&rnlimit=20`,
         hackerNews: `${HACKER_NEWS}/api/v1/search?tags=front_page&hitsPerPage=50`,
-        reddit: (subreddit: string) => `${REDDIT}/r/${subreddit}.json?limit=50`
+        reddit: (subreddit: string) => `${REDDIT}/r/${subreddit}.json?limit=50`,
+        gmyaHot: (endpoint: string) => `${GMYA_API}/Api/${endpoint}?format=json`
     },
     userAgent: {
         chromeVersions: `${CHROME_FOR_TESTING}/chrome-for-testing/last-known-good-versions.json`

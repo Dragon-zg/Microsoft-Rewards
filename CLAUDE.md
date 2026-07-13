@@ -104,7 +104,7 @@ When `config.clusters > 1`, the primary process chunks accounts and forks Node `
 
 `src/functions/SearchManager.ts` decides whether mobile and/or desktop searches are needed from missing point counters and worker toggles. It can run mobile and desktop searches in parallel or sequentially based on `config.searchSettings.parallelSearching`; desktop browser sessions are created only when desktop points are still available.
 
-`src/functions/QueryEngine.ts` builds search query lists from configured sources (`google`, `wikipedia`, `reddit`, `local`), normalizes/deduplicates them, and can expand topics with Bing suggestions/related terms. Query-engine HTTP calls respect `config.proxy.queryEngine`.
+`src/functions/QueryEngine.ts` builds search query lists from configured sources (`google`, `wikipedia`, `reddit`, `local`, `gmya`, plus RSS selectors), normalizes/deduplicates them, and can expand topics with Bing suggestions/related terms. Query-engine HTTP calls respect `config.proxy.queryEngine`.
 
 ### Logging, Webhooks, and Validation
 

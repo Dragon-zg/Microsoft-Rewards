@@ -33,17 +33,8 @@
         "maxBonusSearches": 110,
         "parallelSearching": true,
         "queryEngines": [
-            "google",
-            "wikipedia",
-            "wikirandom",
-            "hackernews",
-            "reddit",
-            "local",
-            "rss.googleTrends",
-            "rss.googleNews",
-            "rss.bbc",
-            "rss.guardian.world",
-            "rss.theVerge.all"
+            "gmya",
+            "local"
         ],
         "searchResultVisitTime": "10sec",
         "searchDelay": {

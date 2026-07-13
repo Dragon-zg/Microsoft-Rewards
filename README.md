@@ -206,6 +206,7 @@ Core sources:
 | `hackernews` | Hacker News front-page stories                   |
 | `reddit`     | Reddit r/popular post titles                     |
 | `local`      | Bundled `src/functions/search-queries.json` list |
+| `gmya`       | GMYA hot lists (`ZhiHuHot`, `WeiBoHot`, `TouTiaoHot`, `DouYinHot`, `BaiduHot`) |
 
 RSS feeds use a dotted path - `rss` for every feed, `rss.<site>` for a whole site, or `rss.<site>.<endpoint>` for a single feed:
 
@@ -220,6 +221,16 @@ RSS feeds use a dotted path - `rss` for every feed, `rss.<site>` for a whole sit
 | `rss.reddit`       | Reddit listing feeds (`popular`, `worldnews`, `technology`)    |
 
 Add your own feeds in `src/constants/rssFeeds.ts`.
+
+GMYA is opt-in: add `gmya` to `searchSettings.queryEngines`, or include it in `CONFIG_SEARCH_QUERY_ENGINES` (for example, `CONFIG_SEARCH_QUERY_ENGINES=google,gmya,rss.bbc`).
+
+```json
+[
+    "google",
+    "gmya",
+    "rss.bbc"
+]
+```
 
 Default:
 

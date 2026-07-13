@@ -6,6 +6,7 @@ import { XMLParser } from 'fast-xml-parser'
 import { URLs } from '../constants/urls'
 import { RSS_FEEDS } from '../constants/rssFeeds'
 import type {
+    GmyaHotResponse,
     GoogleSearch,
     GoogleTrendsResponse,
     HackerNewsResponse,
@@ -19,6 +20,9 @@ import type { MicrosoftRewardsBot } from '../index'
 const GOOGLE_TRENDS_RPC_ID = 'i0OFE'
 
 const RELATED_EXPANSION_LIMIT = 50
+const GMYA_HOT_ENDPOINTS = ['ZhiHuHot', 'WeiBoHot', 'TouTiaoHot', 'DouYinHot', 'BaiduHot'] as const
+
+type GmyaHotEndpoint = (typeof GMYA_HOT_ENDPOINTS)[number]
 
 interface QueryManagerOptions {
     shuffle?: boolean
@@ -75,7 +79,8 @@ export class QueryCore {
                 wikirandom: () => this.getWikipediaRandom(langCode).catch(() => []),
                 hackernews: () => this.getHackerNewsTopics().catch(() => []),
                 reddit: () => this.getRedditTopics().catch(() => []),
-                local: () => this.getLocalQueryList()
+                local: () => this.getLocalQueryList(),
+                gmya: () => this.getGmyaTopics().catch(() => [])
             }
 
             const isRss = (s: string) => s === 'rss' || s.startsWith('rss.')
@@ -361,6 +366,41 @@ export class QueryCore {
                 this.bot.isMobile,
                 'SEARCH-WIKIPEDIA-RANDOM',
                 `Request failed | lang=${lang} | ${error instanceof Error ? error.message : String(error)}`
+            )
+            return []
+        }
+    }
+
+    async getGmyaTopics(): Promise<string[]> {
+        const lists = await Promise.all(GMYA_HOT_ENDPOINTS.map(endpoint => this.fetchGmyaTitles(endpoint)))
+        return lists.flat()
+    }
+
+    private async fetchGmyaTitles(endpoint: GmyaHotEndpoint): Promise<string[]> {
+        try {
+            const request: HttpRequestConfig = {
+                url: URLs.queryEngine.gmyaHot(endpoint),
+                method: 'GET',
+                headers: { ...(this.bot.fingerprint?.headers ?? {}) }
+            }
+
+            const response = await this.bot.http.request<GmyaHotResponse>(request, this.bot.config.proxy.queryEngine)
+            const payload = response.data
+            if (Number(payload?.code) !== 200 || !Array.isArray(payload.data)) {
+                this.bot.logger.debug(
+                    this.bot.isMobile,
+                    'SEARCH-GMYA',
+                    `Invalid response | endpoint=${endpoint} | code=${payload?.code ?? 'unknown'}`
+                )
+                return []
+            }
+
+            return payload.data.map(item => (typeof item.title === 'string' ? item.title.trim() : '')).filter(Boolean)
+        } catch (error) {
+            this.bot.logger.debug(
+                this.bot.isMobile,
+                'SEARCH-GMYA',
+                `Request failed | endpoint=${endpoint} | ${error instanceof Error ? error.message : String(error)}`
             )
             return []
         }
