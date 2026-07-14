@@ -308,7 +308,7 @@ GMYA 为可选来源：把 `gmya` 加到 `searchSettings.queryEngines`，或包�
 > \* Docker 中 `CONFIG_*` 的数组值用逗号分隔，例如 `"error,warn"`。正则表达式必须在 `config.json` 中直接设置。
 
 > [!TIP]
-> **WxPusher** 走标准推送接口，只发送关键汇总卡片（`ACCOUNT-END`、`ACCOUNT-ERROR`、`RUN-END` 和进程级致命错误）。
+> **WxPusher** 走标准推送接口，只发送关键汇总卡片（`ACCOUNT-ERROR`、`RUN-END` 和进程级致命错误）。
 > 这些 HTML 回执**不会**经过 `webhookLogFilter`；请直接配置 `webhook.wxpusher.uids` 和/或 `webhook.wxpusher.topicIds`。
 
 > [!WARNING]

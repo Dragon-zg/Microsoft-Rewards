@@ -17,15 +17,6 @@ const wxpusherQueue = new PQueue({
     carryoverConcurrencyCount: true
 })
 
-export interface WxPusherAccountEndEvent {
-    type: 'account-end'
-    email: string
-    initialPoints: number
-    finalPoints: number
-    collectedPoints: number
-    duration: number
-}
-
 export interface WxPusherAccountErrorEvent {
     type: 'account-error'
     email: string
@@ -52,7 +43,6 @@ export interface WxPusherFatalErrorEvent {
 }
 
 export type WxPusherEvent =
-    | WxPusherAccountEndEvent
     | WxPusherAccountErrorEvent
     | WxPusherRunEndEvent
     | WxPusherFatalErrorEvent
@@ -65,7 +55,7 @@ interface PreparedMessage {
 
 function displayAccount(email: string): string {
     const trimmed = email.trim()
-    if (!trimmed) return 'Unknown account'
+    if (!trimmed) return '未知账号'
     const [user] = trimmed.split('@')
     if (user?.trim()) return user.trim()
     return trimmed
@@ -111,15 +101,15 @@ function statChip(label: string, value: string, tone: 'gain' | 'warn' | 'error' 
 }
 
 function receiptShell(title: string, subtitle: string, hero: string, chips: string, body: string, footer: string): string {
-    return `<div style="background:#F8FAFC;padding:18px;color:#0F172A;font:400 14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;"><div style="max-width:720px;margin:0 auto;border:1px solid #CBD5E1;border-radius:18px;overflow:hidden;background:#FFFFFF;"><div style="padding:18px 18px 14px;background:#0F172A;color:#F8FAFC;"><small style="display:block;letter-spacing:.12em;text-transform:uppercase;opacity:.72;">Microsoft Rewards receipt</small><strong style="display:block;margin-top:6px;font-size:22px;line-height:1.15;">${escapeHtml(title)}</strong><p style="margin:8px 0 0;font-size:13px;opacity:.84;">${escapeHtml(subtitle)}</p></div><div style="padding:18px;border-top:2px dashed #CBD5E1;border-bottom:2px dashed #CBD5E1;"><div style="display:inline-block;padding:10px 14px;border:2px solid #16A34A;border-radius:999px;color:#16A34A;font:800 24px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.02em;">${escapeHtml(hero)}</div><div style="margin-top:14px;">${chips}</div></div><div style="padding:16px 18px 6px;">${body}</div><div style="padding:10px 18px 18px;color:#475569;"><small>${escapeHtml(footer)}</small></div></div></div>`
+    return `<div style="background:#F8FAFC;padding:18px;color:#0F172A;font:400 14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;"><div style="max-width:720px;margin:0 auto;border:1px solid #CBD5E1;border-radius:18px;overflow:hidden;background:#FFFFFF;"><div style="padding:18px 18px 14px;background:#0F172A;color:#F8FAFC;"><small style="display:block;letter-spacing:.12em;text-transform:uppercase;opacity:.72;">Microsoft Rewards 回执</small><strong style="display:block;margin-top:6px;font-size:22px;line-height:1.15;">${escapeHtml(title)}</strong><p style="margin:8px 0 0;font-size:13px;opacity:.84;">${escapeHtml(subtitle)}</p></div><div style="padding:18px;border-top:2px dashed #CBD5E1;border-bottom:2px dashed #CBD5E1;"><div style="display:inline-block;padding:10px 14px;border:2px solid #16A34A;border-radius:999px;color:#16A34A;font:800 24px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.02em;">${escapeHtml(hero)}</div><div style="margin-top:14px;">${chips}</div></div><div style="padding:16px 18px 6px;">${body}</div><div style="padding:10px 18px 18px;color:#475569;"><small>${escapeHtml(footer)}</small></div></div></div>`
 }
 
 function renderAccountSummaryRow(stat: AccountStats): string {
     const tone = stat.success ? '#16A34A' : '#DC2626'
-    const status = stat.success ? 'OK' : 'FAIL'
+    const status = stat.success ? '成功' : '失败'
     const detail = stat.success
         ? `${formatPoints(stat.collectedPoints)} · ${stat.initialPoints} → ${stat.finalPoints}`
-        : truncate(stat.error || 'Flow failed', 120)
+        : truncate(stat.error || '执行失败', 120)
     return `<div style="padding:10px 0;border-top:1px solid #E2E8F0;"><strong style="display:block;font-size:14px;">${escapeHtml(displayAccount(stat.email))}</strong><div style="margin-top:4px;color:${tone};font:700 12px/1.25 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${status}</div><p style="margin:4px 0 0;color:#334155;">${escapeHtml(detail)}</p><small style="color:#64748B;">${escapeHtml(`${stat.duration.toFixed(1)}s`)}</small></div>`
 }
 
@@ -134,72 +124,50 @@ function buildRunEndRows(stats: AccountStats[]): string {
     const hiddenCount = Math.max(sorted.length - visible.length, 0)
     const rows = visible.map(renderAccountSummaryRow).join('')
     const more = hiddenCount
-        ? `<div style="padding:10px 0;border-top:1px solid #E2E8F0;"><small style="color:#64748B;">+${hiddenCount} more accounts</small></div>`
+        ? `<div style="padding:10px 0;border-top:1px solid #E2E8F0;"><small style="color:#64748B;">还有 ${hiddenCount} 个账号未展开</small></div>`
         : ''
     return rows + more
 }
 
 function renderHtml(event: WxPusherEvent): string {
     switch (event.type) {
-        case 'account-end': {
-            return receiptShell(
-                'Account settled',
-                `${displayAccount(event.email)} completed successfully`,
-                formatPoints(event.collectedPoints),
-                [
-                    statChip('Account', displayAccount(event.email), 'accent'),
-                    statChip('Balance', `${event.initialPoints} → ${event.finalPoints}`, 'gain'),
-                    statChip('Runtime', `${event.duration.toFixed(1)}s`, 'accent'),
-                    statChip('Status', 'Success', 'gain')
-                ].join(''),
-                `<p style="margin:0 0 8px;color:#0F172A;">This account finished and the new balance is recorded below.</p><div style="padding:12px 0 0;">${renderAccountSummaryRow({
-                    email: event.email,
-                    initialPoints: event.initialPoints,
-                    finalPoints: event.finalPoints,
-                    collectedPoints: event.collectedPoints,
-                    duration: event.duration,
-                    success: true
-                })}</div>`,
-                'Sent by Microsoft Rewards automation via WxPusher.'
-            )
-        }
         case 'account-error': {
             return receiptShell(
-                'Account needs attention',
-                `${displayAccount(event.email)} did not complete`,
-                'FAILED',
+                '账号执行异常',
+                `${displayAccount(event.email)} 未能完成本轮任务`,
+                '失败',
                 [
-                    statChip('Account', displayAccount(event.email), 'warn'),
-                    statChip('Runtime', `${event.duration.toFixed(1)}s`, 'accent'),
-                    statChip('Status', 'Failed', 'error')
+                    statChip('账号', displayAccount(event.email), 'warn'),
+                    statChip('耗时', `${event.duration.toFixed(1)} 秒`, 'accent'),
+                    statChip('状态', '失败', 'error')
                 ].join(''),
-                `<p style="margin:0;color:#0F172A;">The run stopped before settlement. Review the compact error below.</p><div style="margin-top:12px;padding:12px;border-radius:12px;background:#FEF2F2;color:#7F1D1D;"><strong style="display:block;font-size:13px;">Error summary</strong><p style="margin:6px 0 0;">${escapeHtml(truncate(event.error, 600))}</p></div>`,
-                'Check local logs for the full stack trace if the issue repeats.'
+                `<p style="margin:0;color:#0F172A;">本轮执行在结算前中断，请查看下方精简错误信息。</p><div style="margin-top:12px;padding:12px;border-radius:12px;background:#FEF2F2;color:#7F1D1D;"><strong style="display:block;font-size:13px;">错误摘要</strong><p style="margin:6px 0 0;">${escapeHtml(truncate(event.error, 600))}</p></div>`,
+                '如果问题持续出现，请查看本地日志中的完整堆栈。'
             )
         }
         case 'run-end': {
             return receiptShell(
-                'Run settled',
-                `${event.successCount}/${event.totalAccounts} accounts completed successfully`,
+                '本轮任务结算完成',
+                `${event.successCount}/${event.totalAccounts} 个账号执行成功`,
                 formatPoints(event.totalCollectedPoints),
                 [
-                    statChip('Accounts', `${event.successCount}/${event.totalAccounts}`, event.failureCount ? 'warn' : 'gain'),
-                    statChip('Failures', String(event.failureCount), event.failureCount ? 'error' : 'gain'),
-                    statChip('Balance', `${event.totalInitialPoints} → ${event.totalFinalPoints}`, 'gain'),
-                    statChip('Runtime', `${event.totalDurationMinutes} min`, 'accent')
+                    statChip('账号进度', `${event.successCount}/${event.totalAccounts}`, event.failureCount ? 'warn' : 'gain'),
+                    statChip('失败数', String(event.failureCount), event.failureCount ? 'error' : 'gain'),
+                    statChip('总余额', `${event.totalInitialPoints} → ${event.totalFinalPoints}`, 'gain'),
+                    statChip('总耗时', `${event.totalDurationMinutes} 分钟`, 'accent')
                 ].join(''),
-                `<p style="margin:0 0 10px;color:#0F172A;">Receipt summary for this automation run. Failed accounts are listed first so you can decide whether to intervene.</p>${buildRunEndRows(event.accountStats)}`,
-                'Compact HTML layout tuned for WxPusher mobile reading.'
+                `<p style="margin:0 0 10px;color:#0F172A;">以下是本轮自动任务回执。失败账号会优先显示，方便你快速判断是否需要介入。</p>${buildRunEndRows(event.accountStats)}`,
+                '该回执已针对 WxPusher 手机阅读场景做紧凑排版。'
             )
         }
         case 'fatal-error': {
             return receiptShell(
-                'Process interrupted',
+                '进程异常中断',
                 event.title,
-                'ERROR',
-                [statChip('Status', 'Fatal', 'error'), statChip('Source', event.title, 'warn')].join(''),
-                `<p style="margin:0;color:#0F172A;">The automation stopped unexpectedly.</p><div style="margin-top:12px;padding:12px;border-radius:12px;background:#FEF2F2;color:#7F1D1D;"><strong style="display:block;font-size:13px;">Error summary</strong><p style="margin:6px 0 0;">${escapeHtml(truncate(event.error, 1200))}</p></div>`,
-                'Check local logs for full diagnostics and stack traces.'
+                '错误',
+                [statChip('状态', '致命错误', 'error'), statChip('来源', event.title, 'warn')].join(''),
+                `<p style="margin:0;color:#0F172A;">自动任务意外停止。</p><div style="margin-top:12px;padding:12px;border-radius:12px;background:#FEF2F2;color:#7F1D1D;"><strong style="display:block;font-size:13px;">错误摘要</strong><p style="margin:6px 0 0;">${escapeHtml(truncate(event.error, 1200))}</p></div>`,
+                '请查看本地日志获取完整诊断信息和堆栈。'
             )
         }
     }
@@ -207,13 +175,9 @@ function renderHtml(event: WxPusherEvent): string {
 
 function renderPlainText(event: WxPusherEvent): string {
     switch (event.type) {
-        case 'account-end':
-            return capPlainText(
-                `Microsoft Rewards account settled\nAccount: ${displayAccount(event.email)}\nCollected: ${formatPoints(event.collectedPoints)}\nBalance: ${event.initialPoints} -> ${event.finalPoints}\nRuntime: ${event.duration.toFixed(1)}s`
-            )
         case 'account-error':
             return capPlainText(
-                `Microsoft Rewards account failed\nAccount: ${displayAccount(event.email)}\nRuntime: ${event.duration.toFixed(1)}s\nError: ${event.error}`
+                `Microsoft Rewards 账号执行失败\n账号：${displayAccount(event.email)}\n耗时：${event.duration.toFixed(1)} 秒\n错误：${event.error}`
             )
         case 'run-end': {
             const rows = [...event.accountStats]
@@ -224,31 +188,27 @@ function renderPlainText(event: WxPusherEvent): string {
                 .slice(0, MAX_RUN_END_ROWS)
                 .map(stat =>
                     stat.success
-                        ? `${displayAccount(stat.email)} ${formatPoints(stat.collectedPoints)} (${stat.initialPoints} -> ${stat.finalPoints}, ${stat.duration.toFixed(1)}s)`
-                        : `${displayAccount(stat.email)} FAILED (${stat.duration.toFixed(1)}s): ${truncate(stat.error || 'Flow failed', 120)}`
+                        ? `${displayAccount(stat.email)} ${formatPoints(stat.collectedPoints)} (${stat.initialPoints} -> ${stat.finalPoints}，${stat.duration.toFixed(1)} 秒)`
+                        : `${displayAccount(stat.email)} 失败 (${stat.duration.toFixed(1)} 秒)：${truncate(stat.error || '执行失败', 120)}`
                 )
                 .join('\n')
             return capPlainText(
-                `Microsoft Rewards run settled\nAccounts: ${event.successCount}/${event.totalAccounts} success, ${event.failureCount} failed\nCollected: ${formatPoints(event.totalCollectedPoints)}\nBalance: ${event.totalInitialPoints} -> ${event.totalFinalPoints}\nRuntime: ${event.totalDurationMinutes} min\n\n${rows}`
+                `Microsoft Rewards 本轮任务完成\n账号进度：${event.successCount}/${event.totalAccounts} 成功，${event.failureCount} 失败\n本轮总获取：${formatPoints(event.totalCollectedPoints)}\n总余额：${event.totalInitialPoints} -> ${event.totalFinalPoints}\n总耗时：${event.totalDurationMinutes} 分钟\n\n${rows}`
             )
         }
         case 'fatal-error':
-            return capPlainText(`Microsoft Rewards process interrupted\nSource: ${event.title}\nError: ${event.error}`)
+            return capPlainText(`Microsoft Rewards 进程异常中断\n来源：${event.title}\n错误：${event.error}`)
     }
 }
 
 function buildSummary(event: WxPusherEvent): string {
     switch (event.type) {
-        case 'account-end':
-            return capSummary(`Rewards ${displayAccount(event.email)} ${formatPoints(event.collectedPoints)} · settled`)
         case 'account-error':
-            return capSummary(`Rewards ${displayAccount(event.email)} failed · ${truncate(event.error, 48)}`)
+            return capSummary(`Rewards ${displayAccount(event.email)} 执行失败 · ${truncate(event.error, 48)}`)
         case 'run-end':
-            return capSummary(
-                `Rewards run ${formatPoints(event.totalCollectedPoints)} · ${event.successCount}/${event.totalAccounts} success`
-            )
+            return capSummary(`Rewards 本轮 ${formatPoints(event.totalCollectedPoints)} · ${event.successCount}/${event.totalAccounts} 成功`)
         case 'fatal-error':
-            return capSummary(`Rewards fatal error · ${event.title}`)
+            return capSummary(`Rewards 致命错误 · ${event.title}`)
     }
 }
 

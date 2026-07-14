@@ -315,7 +315,7 @@ Opt-in features that may change. Disabled by default.
 > \* Docker `CONFIG_*` array values are comma-separated strings e.g. `"error,warn"`. Regex patterns must be set directly in `config.json`.
 
 > [!TIP]
-> **WxPusher** uses the standard push API and only sends key summary cards (`ACCOUNT-END`, `ACCOUNT-ERROR`, `RUN-END`, and fatal process errors).
+> **WxPusher** uses the standard push API and only sends key summary cards (`ACCOUNT-ERROR`, `RUN-END`, and fatal process errors).
 > The HTML receipt messages do **not** use `webhookLogFilter`; configure `webhook.wxpusher.uids` and/or `webhook.wxpusher.topicIds` directly.
 
 > [!WARNING]

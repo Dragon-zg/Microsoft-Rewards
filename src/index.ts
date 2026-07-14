@@ -416,15 +416,6 @@ export class MicrosoftRewardsBot {
                         `Completed account: ${accountEmail} | Total: +${collectedPoints} | Old: ${accountInitialPoints} → New: ${accountFinalPoints} | Duration: ${durationSeconds}s`,
                         'green'
                     )
-
-                    emitWxPusherEvent(this.config, {
-                        type: 'account-end',
-                        email: accountEmail,
-                        initialPoints: accountInitialPoints,
-                        finalPoints: accountFinalPoints,
-                        collectedPoints,
-                        duration: parseFloat(durationSeconds)
-                    })
                 } else {
                     const failedStat: AccountStats = {
                         email: accountEmail,
